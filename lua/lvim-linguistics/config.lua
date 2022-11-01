@@ -1,33 +1,76 @@
 local M = {
-    plugin_config = {
-        kbrd_cmd = "xkb-switch -s ",
-        spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
-        show_message = true,
-        local_configs = true,
-    },
-    base_config = {
-        language = {
-            active = true,
-            filetypes = "*",
-            normal_mode_language = nil,
-            insert_mode_language = nil,
-            insert_mode_languages = nil,
-        },
-        spell = {
-            active = true,
-            language = "bg",
-            languages = {
-                en = {
-                    spelllang = "en",
-                    spellfile = "en.add",
-                },
-                bg = {
-                    spelllang = "fr",
-                    spellfile = "en.add",
-                },
-            },
-        },
-    },
+	plugin_config = {
+		kbrd_cmd = "xkb-switch -s ",
+		spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+		show_message = true,
+		local_configs = true,
+		blacklist_ft = {
+			"ctrlspace",
+			"ctrlspace_help",
+			"packer",
+			"undotree",
+			"diff",
+			"Outline",
+			"NvimTree",
+			"LvimHelper",
+			"floaterm",
+			"toggleterm",
+			"Trouble",
+			"dashboard",
+			"vista",
+			"spectre_panel",
+			"DiffviewFiles",
+			"flutterToolsOutline",
+			"log",
+			"qf",
+			"dapui_scopes",
+			"dapui_breakpoints",
+			"dapui_stacks",
+			"dapui_watches",
+			"calendar",
+			"org",
+			"tex",
+			"octo",
+			"neo-tree",
+			"neo-tree-popup",
+			"noice",
+			"",
+		},
+		blacklist_bt = {
+			"nofile",
+			"nowrite",
+			"quickfix",
+			"help",
+			"terminal",
+			"directory",
+			"scratch",
+			"unlisted",
+			"prompt",
+		},
+	},
+	base_config = {
+		language = {
+			active = true,
+			filetypes = "*",
+			normal_mode_language = nil,
+			insert_mode_language = nil,
+			insert_mode_languages = nil,
+		},
+		spell = {
+			active = true,
+			language = "bg",
+			languages = {
+				en = {
+					spelllang = "en",
+					spellfile = "en.add",
+				},
+				bg = {
+					spelllang = "fr",
+					spellfile = "en.add",
+				},
+			},
+		},
+	},
 }
 
 return M
