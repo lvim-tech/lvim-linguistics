@@ -4,7 +4,6 @@ local notify = require("lvim-linguistics.ui.notify")
 local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", {
     clear = true,
 })
--- local middle = require("lvim-linguistics.middle")
 
 local M = {}
 
@@ -15,7 +14,7 @@ M.check_dir = function()
 end
 
 M.get_config = function()
-    local local_config = utils.read_file(vim.fn.getcwd() .. ".lvim_linguistics.json", true)
+    local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", true)
     if local_config ~= nil then
         _G.LVIM_LINGUISTICS = local_config
     else
@@ -91,8 +90,10 @@ M.disable_insert_mode_language = function()
     local autocommands = vim.api.nvim_get_autocmds({
         group = group_change_mode,
     })
-    vim.api.nvim_del_autocmd(autocommands[1]["id"])
-    vim.api.nvim_del_autocmd(autocommands[2]["id"])
+    pcall(function()
+        vim.api.nvim_del_autocmd(autocommands[1]["id"])
+        vim.api.nvim_del_autocmd(autocommands[2]["id"])
+    end)
 end
 
 M.toggle_insert_mode_language = function()

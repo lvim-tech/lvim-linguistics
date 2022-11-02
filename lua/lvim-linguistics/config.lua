@@ -2,8 +2,6 @@ local M = {
     plugin_config = {
         kbrd_cmd = "xkb-switch -s ",
         spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
-        show_message = true,
-        local_configs = true,
         blacklist_ft = {
             "ctrlspace",
             "ctrlspace_help",
@@ -45,30 +43,18 @@ local M = {
     },
     base_config = {
         mode_language = {
-            active = true,
-            normal_mode_language = "us",
-            insert_mode_language = "bg",
-            insert_mode_languages = { "bg", "fr" },
+            active = false,
+            normal_mode_language = nil,
+            insert_mode_language = nil,
+            insert_mode_languages = {},
         },
         spell = {
-            active = true,
-            language = "en",
+            active = false,
+            language = nil,
             languages = {
                 en = {
                     spelllang = "en",
                     spellfile = "en.add",
-                },
-                fr = {
-                    spelllang = "fr",
-                    spellfile = "fr.add",
-                },
-                bg = {
-                    spelllang = "bg",
-                    spellfile = "bg.add",
-                },
-                bg_en = {
-                    spelllang = "bg,en",
-                    spellfile = "bg_en.add",
                 },
             },
         },

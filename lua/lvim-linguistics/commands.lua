@@ -32,18 +32,18 @@ M.init_commands = function()
         {}
     )
     vim.api.nvim_create_user_command(
-        "LvimLinguisticsSAVECurrentConfigAsLocal",
-        "lua require'lvim-linguistics.funcs'.toggle_spelling()",
+        "LvimLinguisticsMENUSaveCurrentConfigAsLocal",
+        "lua require'lvim-linguistics.ui.nui'.menu_save_current_config_as_local()",
         {}
     )
     vim.api.nvim_create_user_command(
-        "LvimLinguisticsUPDATELocalConfig",
-        "lua require'lvim-linguistics.funcs'.toggle_spelling()",
+        "LvimLinguisticsMENUUpdateLocalConfig",
+        "lua require'lvim-linguistics.ui.nui'.menu_save_current_config_as_local()",
         {}
     )
     vim.api.nvim_create_user_command(
-        "LvimLinguisticsDELETELocalConfig",
-        "lua require'lvim-linguistics.funcs'.toggle_spelling()",
+        "LvimLinguisticsMENUDeleteLocalConfig",
+        "lua require'lvim-linguistics.ui.nui'.menu_delete_local_config()",
         {}
     )
 end

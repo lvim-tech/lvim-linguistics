@@ -1,5 +1,6 @@
-local select = require("lvim-select-input.select")
+local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
+local select = require("lvim-select-input.select")
 local notify = require("lvim-linguistics.ui.notify")
 
 local M = {}
@@ -89,7 +90,7 @@ M.menu_insert_mode_status = function()
         return
     end
     local insert_mode_status
-    if _G.LVIM_LINGUISTICS.spell.active == true then
+    if _G.LVIM_LINGUISTICS.mode_language.active == true then
         insert_mode_status = "Active (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")"
     else
         insert_mode_status = "Not active"
@@ -101,7 +102,9 @@ M.menu_insert_mode_status = function()
     }, { prompt = "Insert mode language status: " .. insert_mode_status }, function(choice)
         if choice == "Enable insert mode language" then
             funcs.enable_insert_mode_language()
-            notify.info("Insert mode language enabled")
+            notify.info(
+                "Insert mode language enabled: (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")"
+            )
         elseif choice == "Disable insert mode language" then
             funcs.disable_insert_mode_language()
             notify.info("Insert mode language disabled")
@@ -131,6 +134,36 @@ M.menu_insert_mode_language = function()
             end
         end, "editor")
     end
+end
+
+M.menu_save_current_config_as_local = function()
+    select({
+        "Show current path",
+        "Save",
+        "Cancel",
+    }, { prompt = "Save current config as local" }, function(choice)
+        if choice == "Show current path" then
+            vim.notify(vim.inspect(vim.fn.getcwd()))
+        elseif choice == "Save" then
+            -- vim.notify(vim.inspect(_G.LVIM_LINGUISTICS))
+            utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS, true)
+        end
+    end, "editor")
+end
+
+M.menu_delete_local_config = function()
+    select({
+        "Delete",
+        "Cancel",
+    }, { prompt = "Delete local config file" }, function(choice)
+        if choice == "Delete" then
+            if utils.exists(vim.fn.getcwd() .. "/.lvim_linguistics.json") then
+                utils.delete_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
+            else
+                notify.error("File not exist")
+            end
+        end
+    end, "editor")
 end
 
 return M
