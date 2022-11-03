@@ -72,20 +72,6 @@ M.enable_insert_mode_language = function()
 end
 
 M.disable_insert_mode_language = function()
-    if
-        _G.LVIM_LINGUISTICS.mode_language.normal_mode_language == nil
-        or type(_G.LVIM_LINGUISTICS.mode_language.normal_mode_language) ~= "string"
-    then
-        notify.error("Not defined language for normal mode")
-        return
-    end
-    if
-        _G.LVIM_LINGUISTICS.mode_language.insert_mode_language == nil
-        or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_language) ~= "string"
-    then
-        notify.error("Not defined language for insert mode")
-        return
-    end
     _G.LVIM_LINGUISTICS.mode_language.active = false
     local autocommands = vim.api.nvim_get_autocmds({
         group = group_change_mode,
