@@ -125,15 +125,15 @@ M.menu_insert_mode_language = function()
         return
     end
     for _, v in ipairs(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) do
-        table.insert(values_preview, v)
-        table.insert(values_choice, string.upper(v))
-        select(values_preview, { prompt = "Choice language for insert mode" }, function(choice)
-            if choice == "Cancel" then
-            else
-                funcs.insert_mode_language(values_choice[choice])
-            end
-        end, "editor")
+        table.insert(values_preview, string.upper(v))
+        values_choice[string.upper(v)] = v
     end
+    select(values_preview, { prompt = "Choice language for insert mode" }, function(choice)
+        if choice == "Cancel" then
+        else
+            funcs.insert_mode_language(values_choice[choice])
+        end
+    end, "editor")
 end
 
 M.menu_save_current_config_as_local = function()
