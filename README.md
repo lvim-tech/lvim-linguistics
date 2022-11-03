@@ -230,3 +230,20 @@ Update the current configuration for the current project (folder)
 Delete a file for the current project (folder)
 
 ![LvimLinguisticsMENUDeleteLocalConfig](./media/09.LvimLinguisticsMENUDeleteLocalConfig.png)
+
+## Status
+
+You can add custom statusline component for Spell status
+
+-   Example for Heirline:
+
+```lua
+local spell = {
+    condition = require("lvim-linguistics.status").spell_has,
+    provider = function()
+        local status = require("lvim-linguistics.status").spell_get()
+        return status
+    end,
+    hl = { fg = "#YOUR_COLOR", bold = true },
+}
+```
