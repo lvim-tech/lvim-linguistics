@@ -28,12 +28,13 @@ use({
     event = "VimEnter",
     requires = {
         {
+            "MunifTanjim/nui.nvim",
+        },
+        {
             "rcarriga/nvim-notify",
-            commit = funcs.get_commit("nvim-notify", plugins_snapshot),
         },
         {
             "lvim-tech/lvim-select-input",
-            commit = funcs.get_commit("lvim-select-input", plugins_snapshot),
         },
     },
     rocks = {
