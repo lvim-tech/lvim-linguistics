@@ -1,6 +1,6 @@
 # LVIM LINGUISTICS
 
-![LVIM FOCUS](./media/lvim-linguistics.png)
+![LVIM LINGUISTICS](./media/lvim-linguistics.png)
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/lvim-tech/lvim-helper/blob/main/LICENSE)
 
@@ -134,13 +134,13 @@ base_config = {
 
 Enable / Disable changing language in insert mode
 
-![LVIM FOCUS](./media/01.LvimLinguisticsMENUInsertModeStatus.png)
+![LvimLinguisticsMENUInsertModeStatus](./media/01.LvimLinguisticsMENUInsertModeStatus.png)
 
 -   `LvimLinguisticsMENUInsertModeLanguage`
 
 Language selection for insert mode
 
-![LVIM FOCUS](./media/02.LvimLinguisticsMENUInsertModeLanguage.png)
+![LvimLinguisticsMENUInsertModeLanguage](./media/02.LvimLinguisticsMENUInsertModeLanguage.png)
 
 -   `LvimLinguisticsTOGGLEInsertModeLanguage`
 
@@ -152,7 +152,7 @@ vim.keymap.set("n", "<C-c>l", function()
 end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLEInsertModeLanguage" })
 ```
 
-![LVIM FOCUS](./media/03.LvimLinguisticsTOGGLEInsertModeLanguage.png)
+![LvimLinguisticsTOGGLEInsertModeLanguage](./media/03.LvimLinguisticsTOGGLEInsertModeLanguage.png)
 
 ### Spell
 
@@ -160,13 +160,13 @@ end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLEInsertModeLan
 
 Enable / Disable spelling
 
-![LVIM FOCUS](./media/04.LvimLinguisticsMENUSpellingStatus.png)
+![LvimLinguisticsMENUSpellingStatus](./media/04.LvimLinguisticsMENUSpellingStatus.png)
 
 -   `LvimLinguisticsMENUSpellLanguages`
 
 Select spelling language
 
-![LVIM FOCUS](./media/05.LvimLinguisticsMENUSpellLanguages.png)
+![LvimLinguisticsMENUSpellLanguages](./media/05.LvimLinguisticsMENUSpellLanguages.png)
 
 -   `LvimLinguisticsTOGGLESpelling`
 
@@ -176,7 +176,7 @@ vim.keymap.set("n", "<C-c>s", function()
 end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLESpelling" })
 ```
 
-![LVIM FOCUS](./media/06.LvimLinguisticsTOGGLESpelling.png)
+![LvimLinguisticsTOGGLESpelling](./media/06.LvimLinguisticsTOGGLESpelling.png)
 
 ### Local config
 
@@ -184,18 +184,18 @@ end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLESpelling" })
 
 Save the current configuration for the current project (folder)
 
-![LVIM FOCUS](./media/07.LvimLinguisticsMENUSaveCurrentConfigAsLocal.png)
+![LvimLinguisticsMENUSaveCurrentConfigAsLocal](./media/07.LvimLinguisticsMENUSaveCurrentConfigAsLocal.png)
 
-![LVIM FOCUS](./media/07.LvimLinguisticsLocalConfigFile.png)
+![LvimLinguisticsLocalConfigFile](./media/07.LvimLinguisticsLocalConfigFile.png)
 
 -   `LvimLinguisticsMENUUpdateLocalConfig`
 
 Update the current configuration for the current project (folder)
 
-![LVIM FOCUS](./media/08.LvimLinguisticsMENUUpdateLocalConfig.png)
+![LvimLinguisticsMENUUpdateLocalConfig](./media/08.LvimLinguisticsMENUUpdateLocalConfig.png)
 
 -   `LvimLinguisticsMENUDeleteLocalConfig`
 
 Delete a file for the current project (folder)
 
-![LVIM FOCUS](./media/1/09.LvimLinguisticsMENUDeleteLocalConfig.png)
+![LvimLinguisticsMENUDeleteLocalConfig](./media/09.LvimLinguisticsMENUDeleteLocalConfig.png)
