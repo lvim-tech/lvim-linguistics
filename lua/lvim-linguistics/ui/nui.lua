@@ -145,7 +145,6 @@ M.menu_save_current_config_as_local = function()
         if choice == "Show current path" then
             vim.notify(vim.inspect(vim.fn.getcwd()))
         elseif choice == "Save" then
-            -- vim.notify(vim.inspect(_G.LVIM_LINGUISTICS))
             utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS, true)
         end
     end, "editor")

@@ -58,14 +58,26 @@ M.enable_insert_mode_language = function()
     vim.api.nvim_create_autocmd("InsertEnter", {
         pattern = "*",
         callback = function()
-            os.execute(config.plugin_config.kbrd_cmd .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language)
+            pcall(function()
+                os.execute(
+                    config.plugin_config.kbrd_cmd
+                        .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language
+                        .. "&> /dev/null"
+                )
+            end)
         end,
         group = group_change_mode,
     })
     vim.api.nvim_create_autocmd("InsertLeave", {
         pattern = "*",
         callback = function()
-            os.execute(config.plugin_config.kbrd_cmd .. _G.LVIM_LINGUISTICS.mode_language.normal_mode_language)
+            pcall(function()
+                os.execute(
+                    config.plugin_config.kbrd_cmd
+                        .. _G.LVIM_LINGUISTICS.mode_language.normal_mode_language
+                        .. "&> /dev/null"
+                )
+            end)
         end,
         group = group_change_mode,
     })
@@ -158,18 +170,6 @@ M.toggle_spelling = function()
         M.disable_spelling()
         notify.info("Spelling disabled")
     end
-end
-
-M.save_current_config_as_local = function()
-    --
-end
-
-M.update_local_config = function()
-    --
-end
-
-M.delete_local_congig = function()
-    --
 end
 
 return M

@@ -1,4 +1,3 @@
--- http://ftp.vim.org/vim/runtime/spell
 local config = require("lvim-linguistics.config")
 local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")

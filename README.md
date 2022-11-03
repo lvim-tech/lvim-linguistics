@@ -11,7 +11,7 @@ a different language).
 
 > This plug-in is support local config for projects (directories)
 
-> Current version - 1.0.05
+> Current version - 1.0.10
 
 ## Requirements:
 
