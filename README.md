@@ -20,6 +20,36 @@ a different language).
 -   [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify)
 -   [lvim-tech/lvim-select-input](https://github.com/lvim-tech/lvim-select-input)
 
+## Init
+
+```lua
+use({
+    "lvim-tech/lvim-linguistics",
+    event = "VimEnter",
+    requires = {
+        {
+            "rcarriga/nvim-notify",
+            commit = funcs.get_commit("nvim-notify", plugins_snapshot),
+        },
+        {
+            "lvim-tech/lvim-select-input",
+            commit = funcs.get_commit("lvim-select-input", plugins_snapshot),
+        },
+    },
+    rocks = {
+        {
+            "lunajson",
+            server = "http://rocks.moonscript.org",
+        },
+    },
+    config = function()
+        require("lvim-linguistics").setup({
+            -- your config
+        })
+    end,
+})
+```
+
 ## Default config
 
 ```lua
