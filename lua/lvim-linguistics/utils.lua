@@ -86,20 +86,4 @@ M.exists = function(name)
     end
 end
 
-M.ignore_by_ft = function(ft)
-    for _, type in pairs(config.plugin_config.blacklist_ft) do
-        if type == ft then
-            return 1
-        end
-    end
-end
-
-M.ignore_by_bt = function(bt)
-    for _, type in pairs(config.plugin_config.blacklist_bt) do
-        if type == bt then
-            return 1
-        end
-    end
-end
-
 return M

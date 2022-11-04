@@ -135,26 +135,7 @@ M.enable_spelling = function()
         vim.cmd(cmd)
         _G.LVIM_LINGUISTICS.spell.active = true
     end
-    local ft = vim.bo.filetype
-    local bt = vim.bo.buftype
-    if vim.bo.modifiable == true and not utils.ignore_by_ft(ft) and not utils.ignore_by_bt(bt) then
-        enable()
-    else
-        local group_enable_spell = vim.api.nvim_create_augroup("LvimLinguisticsEnableSpell", {
-            clear = true,
-        })
-        vim.api.nvim_create_autocmd("BufEnter", {
-            callback = function()
-                ft = vim.bo.filetype
-                bt = vim.bo.buftype
-                if vim.bo.modifiable == true and not utils.ignore_by_ft(ft) and not utils.ignore_by_bt(bt) then
-                    enable()
-                    vim.api.nvim_del_augroup_by_name("LvimLinguisticsEnableSpell")
-                end
-            end,
-            group = group_enable_spell,
-        })
-    end
+    enable()
 end
 
 M.disable_spelling = function()
