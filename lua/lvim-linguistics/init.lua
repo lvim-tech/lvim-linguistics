@@ -2,7 +2,6 @@ local config = require("lvim-linguistics.config")
 local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
 local commands = require("lvim-linguistics.commands")
-local notify = require("lvim-linguistics.ui.notify")
 local timer = true
 local group_spell_file_missing = vim.api.nvim_create_augroup("LvimLinguisticsSpellFileMissing", {
     clear = true,

@@ -1,4 +1,3 @@
-local config = require("lvim-linguistics.config")
 local lunajson = require("lunajson")
 
 local M = {}

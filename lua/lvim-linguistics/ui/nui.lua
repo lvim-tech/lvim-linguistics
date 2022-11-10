@@ -1,17 +1,21 @@
 local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
 local select = require("lvim-select-input.select")
-local notify = require("lvim-linguistics.ui.notify")
+local notify = require("lvim-select-input.notify")
 
 local M = {}
 
 M.menu_spelling_status = function()
     if _G.LVIM_LINGUISTICS.spell.language == nil then
-        notify.error("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language)
+        notify.error("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language, {
+            title = "LVIM LINGUISTICS",
+        })
         return
     end
     if _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language] == nil then
-        notify.error("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language)
+        notify.error("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language, {
+            title = "LVIM LINGUISTICS",
+        })
         return
     end
     local spelling_status
@@ -27,10 +31,14 @@ M.menu_spelling_status = function()
     }, { prompt = "Spelling status: " .. spelling_status }, function(choice)
         if choice == "Enable spelling" then
             funcs.enable_spelling()
-            notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")")
+            notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", {
+                title = "LVIM LINGUISTICS",
+            })
         elseif choice == "Disable spelling" then
             funcs.disable_spelling()
-            notify.info("Spelling disabled")
+            notify.info("Spelling disabled", {
+                title = "LVIM LINGUISTICS",
+            })
         end
     end, "editor")
 end
@@ -46,7 +54,9 @@ M.menu_spell_languages = function()
             _G.LVIM_LINGUISTICS.spell.languages[k]["spelllang"] == nil
             or type(_G.LVIM_LINGUISTICS.spell.languages[k]["spelllang"]) ~= "string"
         then
-            notify.error("Incorrect defined spell file for: " .. k)
+            notify.error("Incorrect defined spell file for: " .. k, {
+                title = "LVIM LINGUISTICS",
+            })
             return
         else
             spelllang = _G.LVIM_LINGUISTICS.spell.languages[k]["spelllang"]
@@ -79,14 +89,18 @@ M.menu_insert_mode_status = function()
         _G.LVIM_LINGUISTICS.mode_language.normal_mode_language == nil
         or type(_G.LVIM_LINGUISTICS.mode_language.normal_mode_language) ~= "string"
     then
-        notify.error("Not defined language for normal mode")
+        notify.error("Not defined language for normal mode", {
+            title = "LVIM LINGUISTICS",
+        })
         return
     end
     if
         _G.LVIM_LINGUISTICS.mode_language.insert_mode_language == nil
         or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_language) ~= "string"
     then
-        notify.error("Not defined language for insert mode")
+        notify.error("Not defined language for insert mode", {
+            title = "LVIM LINGUISTICS",
+        })
         return
     end
     local insert_mode_status
@@ -103,11 +117,16 @@ M.menu_insert_mode_status = function()
         if choice == "Enable insert mode language" then
             funcs.enable_insert_mode_language()
             notify.info(
-                "Insert mode language enabled: (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")"
+                "Insert mode language enabled: (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")",
+                {
+                    title = "LVIM LINGUISTICS",
+                }
             )
         elseif choice == "Disable insert mode language" then
             funcs.disable_insert_mode_language()
-            notify.info("Insert mode language disabled")
+            notify.info("Insert mode language disabled", {
+                title = "LVIM LINGUISTICS",
+            })
         else
         end
     end, "editor")
@@ -121,7 +140,9 @@ M.menu_insert_mode_language = function()
         or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) ~= "table"
         or next(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) == nil
     then
-        notify.error("Not defined any languages")
+        notify.error("Not defined any languages", {
+            title = "LVIM LINGUISTICS",
+        })
         return
     end
     for _, v in ipairs(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) do
@@ -143,7 +164,9 @@ M.menu_save_current_config_as_local = function()
         "Cancel",
     }, { prompt = "Save current config as local" }, function(choice)
         if choice == "Show current path" then
-            vim.notify(vim.inspect(vim.fn.getcwd()))
+            notify(vim.inspect(vim.fn.getcwd()), {
+                title = "LVIM LINGUISTICS",
+            })
         elseif choice == "Save" then
             utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS, true)
         end
@@ -159,7 +182,9 @@ M.menu_delete_local_config = function()
             if utils.exists(vim.fn.getcwd() .. "/.lvim_linguistics.json") then
                 utils.delete_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
             else
-                notify.error("File not exist")
+                notify.error("File not exist", {
+                    title = "LVIM LINGUISTICS",
+                })
             end
         end
     end, "editor")
