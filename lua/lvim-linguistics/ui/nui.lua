@@ -1,7 +1,7 @@
 local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
-local select = require("lvim-select-input.select")
-local notify = require("lvim-select-input.notify")
+local select = require("lvim-ui-config.select")
+local notify = require("lvim-ui-config.notify")
 
 local M = {}
 
