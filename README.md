@@ -61,12 +61,78 @@ plugin_config = {
 base_config = {
     mode_language = {
         active = false,
+        file_types = {
+            black_list = {
+                "alpha",
+                "ctrlspace",
+                "ctrlspace_help",
+                "packer",
+                "undotree",
+                "diff",
+                "Outline",
+                "NvimTree",
+                "LvimHelper",
+                "floaterm",
+                "toggleterm",
+                "Trouble",
+                "dashboard",
+                "vista",
+                "spectre_panel",
+                "DiffviewFiles",
+                "flutterToolsOutline",
+                "log",
+                "qf",
+                "dapui_scopes",
+                "dapui_breakpoints",
+                "dapui_stacks",
+                "dapui_watches",
+                "calendar",
+                "octo",
+                "neo-tree",
+                "neo-tree-popup",
+                "noice",
+            },
+            white_list = {},
+        },
         normal_mode_language = nil,
         insert_mode_language = nil,
         insert_mode_languages = {},
     },
     spell = {
         active = false,
+        file_types = {
+            black_list = {
+                "alpha",
+                "ctrlspace",
+                "ctrlspace_help",
+                "packer",
+                "undotree",
+                "diff",
+                "Outline",
+                "NvimTree",
+                "LvimHelper",
+                "floaterm",
+                "toggleterm",
+                "Trouble",
+                "dashboard",
+                "vista",
+                "spectre_panel",
+                "DiffviewFiles",
+                "flutterToolsOutline",
+                "log",
+                "qf",
+                "dapui_scopes",
+                "dapui_breakpoints",
+                "dapui_stacks",
+                "dapui_watches",
+                "calendar",
+                "octo",
+                "neo-tree",
+                "neo-tree-popup",
+                "noice",
+            },
+            white_list = {},
+        },
         language = nil,
         languages = {
             en = {
@@ -89,14 +155,20 @@ base_config = {
 ```lua
 base_config = {
     mode_language = {
-        active = false, -- changing the keyboard language does not start automatically
+        active = true, -- changing the keyboard language start automatically
+        white_list = {
+            "tex", -- active is true only for tex filetype
+        },
         normal_mode_language = "us", -- keyboard language (normal mode)
         insert_mode_language = "fr", -- keyboard language (insert mode)
         insert_mode_languages = { "fr", "de" }, -- you can choice language for insert mode
     },
     spell = {
-        active = false, -- spelling does not start automatically
-        language = "en", -- language for spellin
+        active = true, -- spelling start automatically
+        white_list = {
+            "tex", -- active is true only for tex filetype
+        },
+        language = "ft", -- language for spellin
         languages = { -- you can choice language for spelling
             en = {
                 spelllang = "en",
