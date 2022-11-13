@@ -4,7 +4,10 @@ local notify = require("lvim-ui-config.notify")
 local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", {
     clear = true,
 })
-local group_spell = vim.api.nvim_create_augroup("LvimLinguisticsChangeDirectory", {
+local group_spell_enabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellEnabled", {
+    clear = true,
+})
+local group_spell_disabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellDisabled", {
     clear = true,
 })
 
@@ -28,9 +31,13 @@ end
 M.proccess = function()
     if _G.LVIM_LINGUISTICS.mode_language.active == true then
         M.enable_insert_mode_language()
+    else
+        M.disable_insert_mode_language()
     end
     if _G.LVIM_LINGUISTICS.spell.active == true then
         M.enable_spelling()
+    else
+        M.disable_spelling()
     end
 end
 
@@ -128,14 +135,14 @@ M.disable_insert_mode_language = function()
 end
 
 M.toggle_insert_mode_language = function()
-    if _G.LVIM_LINGUISTICS.mode_language.active == false then
-        M.enable_insert_mode_language()
-        notify.info("Insert mode language enabled", {
+    if _G.LVIM_LINGUISTICS.mode_language.active == true then
+        M.disable_insert_mode_language()
+        notify.info("Insert mode language disabled", {
             title = "LVIM LINGUISTICS",
         })
     else
-        M.disable_insert_mode_language()
-        notify.info("Insert mode language disabled", {
+        M.enable_insert_mode_language()
+        notify.info("Insert mode language enabled", {
             title = "LVIM LINGUISTICS",
         })
     end
@@ -146,7 +153,6 @@ M.change_spell_language = function(language)
 end
 
 M.enable_spelling = function()
-    -- local function enable()
     if _G.LVIM_LINGUISTICS.spell.language == nil or type(_G.LVIM_LINGUISTICS.spell.language) ~= "string" then
         notify.error("Not defined language(s)", {
             title = "LVIM LINGUISTICS",
@@ -170,63 +176,66 @@ M.enable_spelling = function()
     if spellfile == nil or type(spellfile) ~= "string" then
         spellfile = "global.add"
     end
-
-    vim.api.nvim_create_autocmd("BufWinEnter", {
-        callback = function()
-            local ft = vim.bo.filetype
-            local cmd = "setlocal spell spelllang="
-                .. spelllang
-                .. " spellfile="
-                .. config.plugin_config.spell_files_folder
-                .. spellfile
-            if next(_G.LVIM_LINGUISTICS.spell.file_types.white_list) then
-                if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
-                    _G.LVIM_LINGUISTICS.spell.active = true
-                    vim.cmd(cmd)
-                else
-                    _G.LVIM_LINGUISTICS.spell.active = false
-                end
-            else
-                if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
-                    _G.LVIM_LINGUISTICS.spell.active = true
-                    vim.cmd(cmd)
-                else
-                    _G.LVIM_LINGUISTICS.spell.active = false
-                end
+    local function spell()
+        local ft = vim.bo.filetype
+        local cmd = "setlocal spell spelllang="
+            .. spelllang
+            .. " spellfile="
+            .. config.plugin_config.spell_files_folder
+            .. spellfile
+        if next(_G.LVIM_LINGUISTICS.spell.file_types.white_list) then
+            if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
+                vim.cmd(cmd)
             end
+        else
+            if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
+                _G.LVIM_LINGUISTICS.spell.active = true
+                vim.cmd(cmd)
+            end
+        end
+    end
+    spell()
+    vim.api.nvim_create_autocmd("WinEnter", {
+        callback = function()
+            spell()
         end,
-        group = group_spell,
+        group = group_spell_enabled,
     })
-    -- local cmd = "set spell spelllang="
-    --     .. spelllang
-    --     .. " spellfile="
-    --     .. config.plugin_config.spell_files_folder
-    --     .. spellfile
-    -- vim.cmd(cmd)
-    -- end
-    -- enable()
+    pcall(function()
+        local autocommands = vim.api.nvim_get_autocmds({
+            group = group_spell_disabled,
+        })
+        vim.api.nvim_del_autocmd(autocommands[1]["id"])
+    end)
+    _G.LVIM_LINGUISTICS.spell.active = true
 end
 
 M.disable_spelling = function()
     vim.cmd("setlocal nospell")
-    _G.LVIM_LINGUISTICS.spell.active = false
-    local autocommands = vim.api.nvim_get_autocmds({
-        group = group_spell,
+    vim.api.nvim_create_autocmd("WinEnter", {
+        callback = function()
+            vim.cmd("setlocal nospell")
+        end,
+        group = group_spell_disabled,
     })
     pcall(function()
+        local autocommands = vim.api.nvim_get_autocmds({
+            group = group_spell_enabled,
+        })
         vim.api.nvim_del_autocmd(autocommands[1]["id"])
     end)
+    _G.LVIM_LINGUISTICS.spell.active = false
 end
 
 M.toggle_spelling = function()
-    if _G.LVIM_LINGUISTICS.spell.active == false then
-        M.enable_spelling()
-        notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", {
+    if _G.LVIM_LINGUISTICS.spell.active == true then
+        M.disable_spelling()
+        notify.info("Spelling disabled", {
             title = "LVIM LINGUISTICS",
         })
     else
-        M.disable_spelling()
-        notify.info("Spelling disabled", {
+        M.enable_spelling()
+        notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", {
             title = "LVIM LINGUISTICS",
         })
     end

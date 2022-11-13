@@ -19,11 +19,11 @@ M.setup = function(user_config)
     funcs.check_dir()
     funcs.get_config()
     M.spell_file_missing()
-    M.change_directory()
     vim.defer_fn(function()
+        commands.init_commands()
         funcs.proccess()
-    end, 100)
-    commands.init_commands()
+        M.change_directory()
+    end, 10)
 end
 
 M.spell_file_missing = function()
@@ -50,10 +50,10 @@ M.change_directory = function()
             if timer then
                 timer = false
                 funcs.get_config()
-                funcs.proccess()
                 vim.defer_fn(function()
+                    funcs.proccess()
                     timer = true
-                end, 10)
+                end, 100)
             end
         end,
         group = group_change_directory,
