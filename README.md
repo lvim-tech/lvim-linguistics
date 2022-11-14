@@ -37,12 +37,6 @@ use({
             "lvim-tech/lvim-ui-config",
         },
     },
-    rocks = {
-        {
-            "lunajson",
-            server = "http://rocks.moonscript.org",
-        },
-    },
     config = function()
         require("lvim-linguistics").setup({
             -- your config

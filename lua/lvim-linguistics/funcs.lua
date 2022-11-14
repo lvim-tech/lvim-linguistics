@@ -20,7 +20,7 @@ M.check_dir = function()
 end
 
 M.get_config = function()
-    local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", true)
+    local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
     if local_config ~= nil then
         _G.LVIM_LINGUISTICS = local_config
     else

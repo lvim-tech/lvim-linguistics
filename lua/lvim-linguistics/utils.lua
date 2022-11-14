@@ -1,5 +1,3 @@
-local lunajson = require("lunajson")
-
 local M = {}
 
 M.merge = function(t1, t2)
@@ -43,27 +41,29 @@ M.map = function(mode, lhs, rhs, opts)
     vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
-M.read_file = function(f, json_decode)
-    local file = io.open(f, "rb")
-    if not file then
+M.read_file = function(file)
+    local content
+    local file_content_ok, _ = pcall(function()
+        content = vim.fn.readfile(file)
+    end)
+    if not file_content_ok then
         return nil
     end
-    local file_content = file:read("*a")
-    file:close()
-    if json_decode then
-        return lunajson.decode(file_content)
+    if type(content) == "table" then
+        return vim.fn.json_decode(content)
+    else
+        return nil
     end
-    return file_content
 end
 
-M.write_file = function(f, content, json_encode)
-    local file = io.open(f, "w")
-    if file ~= nil then
-        if json_encode then
-            content = lunajson.encode(content)
+M.write_file = function(file, content)
+    local f = io.open(file, "w")
+    if f ~= nil then
+        if type(content) == "table" then
+            content = vim.fn.json_encode(content)
         end
-        file:write(content)
-        file:close()
+        f:write(content)
+        f:close()
     end
 end
 
