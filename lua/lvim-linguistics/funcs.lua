@@ -195,7 +195,7 @@ M.enable_spelling = function()
         end
     end
     spell()
-    vim.api.nvim_create_autocmd("WinEnter", {
+    vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
         callback = function()
             spell()
         end,
