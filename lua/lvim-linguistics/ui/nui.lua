@@ -1,5 +1,6 @@
 local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
+local ui_config = require("lvim-ui-config.config")
 local select = require("lvim-ui-config.select")
 local notify = require("lvim-ui-config.notify")
 
@@ -24,11 +25,12 @@ M.menu_spelling_status = function()
     else
         spelling_status = "Not active"
     end
-    select({
+    local opts = ui_config.select({
         "Enable spelling",
         "Disable spelling",
         "Cancel",
-    }, { prompt = "Spelling status: " .. spelling_status }, function(choice)
+    }, { prompt = "Spelling status: " .. spelling_status }, {})
+    select(opts, function(choice)
         if choice == "Enable spelling" then
             funcs.enable_spelling()
             notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", {
@@ -40,7 +42,7 @@ M.menu_spelling_status = function()
                 title = "LVIM LINGUISTICS",
             })
         end
-    end, "editor")
+    end)
 end
 
 M.menu_spell_languages = function()
@@ -74,14 +76,15 @@ M.menu_spell_languages = function()
         values_choice[string_to_insert] = k
     end
     table.insert(values_preview, "Cancel")
-    select(values_preview, { prompt = "Choice language(s) for spelling" }, function(choice)
+    local opts = ui_config.select(values_preview, { prompt = "Choice language(s) for spelling" }, {})
+    select(opts, function(choice)
         if choice == "Cancel" then
         else
             funcs.change_spell_language(values_choice[choice])
             funcs.disable_spelling()
             funcs.enable_spelling()
         end
-    end, "editor")
+    end)
 end
 
 M.menu_insert_mode_status = function()
@@ -109,11 +112,12 @@ M.menu_insert_mode_status = function()
     else
         insert_mode_status = "Not active"
     end
-    select({
+    local opts = ui_config.select({
         "Enable insert mode language",
         "Disable insert mode language",
         "Cancel",
-    }, { prompt = "Insert mode language status: " .. insert_mode_status }, function(choice)
+    }, { prompt = "Insert mode language status: " .. insert_mode_status }, {})
+    select(opts, function(choice)
         if choice == "Enable insert mode language" then
             funcs.enable_insert_mode_language()
             notify.info(
@@ -127,9 +131,8 @@ M.menu_insert_mode_status = function()
             notify.info("Insert mode language disabled", {
                 title = "LVIM LINGUISTICS",
             })
-        else
         end
-    end, "editor")
+    end)
 end
 
 M.menu_insert_mode_language = function()
@@ -149,35 +152,38 @@ M.menu_insert_mode_language = function()
         table.insert(values_preview, string.upper(v))
         values_choice[string.upper(v)] = v
     end
-    select(values_preview, { prompt = "Choice language for insert mode" }, function(choice)
+    local opts = ui_config.select(values_preview, { prompt = "Choice language for insert mode" }, {})
+    select(opts, function(choice)
         if choice == "Cancel" then
         else
             funcs.insert_mode_language(values_choice[choice])
         end
-    end, "editor")
+    end)
 end
 
 M.menu_save_current_config_as_local = function()
-    select({
+    local opts = ui_config.select({
         "Show current path",
         "Save",
         "Cancel",
-    }, { prompt = "Save current config as local" }, function(choice)
+    }, { prompt = "Save current config as local" }, {})
+    select(opts, function(choice)
         if choice == "Show current path" then
             notify(vim.inspect(vim.fn.getcwd()), {
                 title = "LVIM LINGUISTICS",
             })
         elseif choice == "Save" then
-            utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS, true)
+            utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS)
         end
-    end, "editor")
+    end)
 end
 
 M.menu_delete_local_config = function()
-    select({
+    local opts = ui_config.select({
         "Delete",
         "Cancel",
-    }, { prompt = "Delete local config file" }, function(choice)
+    }, { prompt = "Delete local config file" }, {})
+    select(opts, function(choice)
         if choice == "Delete" then
             if utils.exists(vim.fn.getcwd() .. "/.lvim_linguistics.json") then
                 utils.delete_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
@@ -187,7 +193,7 @@ M.menu_delete_local_config = function()
                 })
             end
         end
-    end, "editor")
+    end)
 end
 
 return M
