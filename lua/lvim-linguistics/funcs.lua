@@ -29,15 +29,17 @@ M.get_config = function()
 end
 
 M.proccess = function()
-    if _G.LVIM_LINGUISTICS.mode_language.active == true then
-        M.enable_insert_mode_language()
-    else
-        M.disable_insert_mode_language()
-    end
-    if _G.LVIM_LINGUISTICS.spell.active == true then
-        M.enable_spelling()
-    else
-        M.disable_spelling()
+    if type(_G.LVIM_LINGUISTICS) == "table" then
+        if _G.LVIM_LINGUISTICS.mode_language.active == true then
+            M.enable_insert_mode_language()
+        else
+            M.disable_insert_mode_language()
+        end
+        if _G.LVIM_LINGUISTICS.spell.active == true then
+            M.enable_spelling()
+        else
+            M.disable_spelling()
+        end
     end
 end
 
@@ -183,14 +185,16 @@ M.enable_spelling = function()
             .. " spellfile="
             .. config.plugin_config.spell_files_folder
             .. spellfile
-        if next(_G.LVIM_LINGUISTICS.spell.file_types.white_list) then
-            if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
-                vim.cmd(cmd)
-            end
-        else
-            if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
-                _G.LVIM_LINGUISTICS.spell.active = true
-                vim.cmd(cmd)
+        if type(_G.LVIM_LINGUISTICS) == "table" then
+            if next(_G.LVIM_LINGUISTICS.spell.file_types.white_list) then
+                if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
+                    vim.cmd(cmd)
+                end
+            else
+                if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
+                    _G.LVIM_LINGUISTICS.spell.active = true
+                    vim.cmd(cmd)
+                end
             end
         end
     end
