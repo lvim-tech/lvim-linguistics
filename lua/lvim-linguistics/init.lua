@@ -46,15 +46,10 @@ end
 
 M.change_directory = function()
     vim.api.nvim_create_autocmd("DirChanged", {
+        pattern = "global",
         callback = function()
-            if timer then
-                timer = false
-                funcs.get_config()
-                vim.defer_fn(function()
-                    funcs.proccess()
-                    timer = true
-                end, 100)
-            end
+            funcs.get_config()
+            funcs.proccess()
         end,
         group = group_change_directory,
     })

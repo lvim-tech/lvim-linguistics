@@ -169,7 +169,7 @@ M.menu_save_current_config_as_local = function()
     }, { prompt = "Save current config as local" }, {})
     select(opts, function(choice)
         if choice == "Show current path" then
-            notify(vim.inspect(vim.fn.getcwd()), {
+            notify.info(vim.inspect(vim.fn.getcwd()), {
                 title = "LVIM LINGUISTICS",
             })
         elseif choice == "Save" then

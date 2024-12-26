@@ -43,13 +43,16 @@ end
 
 M.read_file = function(file)
     local content
-    local file_content_ok, _ = pcall(function()
+    local file_content_ok = pcall(function()
         content = vim.fn.readfile(file)
     end)
     if not file_content_ok then
         return nil
     end
     if type(content) == "table" then
+        if next(content) == nil then
+            return nil
+        end
         return vim.fn.json_decode(content)
     else
         return nil

@@ -31,9 +31,6 @@ use({
             "MunifTanjim/nui.nvim",
         },
         {
-            "rcarriga/nvim-notify",
-        },
-        {
             "lvim-tech/lvim-ui-config",
         },
     },
