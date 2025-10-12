@@ -16,9 +16,6 @@ a different language).
 ## Requirements:
 
 - [xkb-switch](https://github.com/grwlf/xkb-switch) - to switch the keyboard (you can use another mechanism)
-- [MunifTanjim/nui.nvim](https://github.com/MunifTanjim/nui.nvim)
-- [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify)
-- [lvim-tech/lvim-ui-config](https://github.com/lvim-tech/lvim-ui-config)
 
 ## Init
 
