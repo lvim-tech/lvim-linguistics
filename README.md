@@ -11,14 +11,14 @@ a different language).
 
 > This plug-in is support local config for projects (directories)
 
-> Current version - 1.0.30 (2022-11-10)
+> Current version - 1.1.00 (2025-10-12)
 
 ## Requirements:
 
--   [xkb-switch](https://github.com/grwlf/xkb-switch) - to switch the keyboard (you can use another mechanism)
--   [MunifTanjim/nui.nvim](https://github.com/MunifTanjim/nui.nvim)
--   [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify)
--   [lvim-tech/lvim-ui-config](https://github.com/lvim-tech/lvim-ui-config)
+- [xkb-switch](https://github.com/grwlf/xkb-switch) - to switch the keyboard (you can use another mechanism)
+- [MunifTanjim/nui.nvim](https://github.com/MunifTanjim/nui.nvim)
+- [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify)
+- [lvim-tech/lvim-ui-config](https://github.com/lvim-tech/lvim-ui-config)
 
 ## Init
 
@@ -26,14 +26,6 @@ a different language).
 use({
     "lvim-tech/lvim-linguistics",
     event = "VimEnter",
-    requires = {
-        {
-            "MunifTanjim/nui.nvim",
-        },
-        {
-            "lvim-tech/lvim-ui-config",
-        },
-    },
     config = function()
         require("lvim-linguistics").setup({
             -- your config
@@ -135,13 +127,13 @@ base_config = {
 }
 ```
 
--   `kbrd_cmd` - command for switch keyboard
+- `kbrd_cmd` - command for switch keyboard
 
--   `spell_files_folder` - folder to save spell files
+- `spell_files_folder` - folder to save spell files
 
--   `base_config` - config for mode language and spelling
+- `base_config` - config for mode language and spelling
 
--   `base_config` example:
+- `base_config` example:
 
 ```lua
 base_config = {
@@ -186,19 +178,19 @@ base_config = {
 
 ### Mode language
 
--   `LvimLinguisticsMENUInsertModeStatus`
+- `LvimLinguisticsMENUInsertModeStatus`
 
 Enable / Disable changing language in insert mode
 
 ![LvimLinguisticsMENUInsertModeStatus](./media/01.LvimLinguisticsMENUInsertModeStatus.png)
 
--   `LvimLinguisticsMENUInsertModeLanguage`
+- `LvimLinguisticsMENUInsertModeLanguage`
 
 Language selection for insert mode
 
 ![LvimLinguisticsMENUInsertModeLanguage](./media/02.LvimLinguisticsMENUInsertModeLanguage.png)
 
--   `LvimLinguisticsTOGGLEInsertModeLanguage`
+- `LvimLinguisticsTOGGLEInsertModeLanguage`
 
 You can set a keymap for this command to enable/disable
 
@@ -212,19 +204,19 @@ end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLEInsertModeLan
 
 ### Spell
 
--   `LvimLinguisticsMENUSpellingStatus`
+- `LvimLinguisticsMENUSpellingStatus`
 
 Enable / Disable spelling
 
 ![LvimLinguisticsMENUSpellingStatus](./media/04.LvimLinguisticsMENUSpellingStatus.png)
 
--   `LvimLinguisticsMENUSpellLanguages`
+- `LvimLinguisticsMENUSpellLanguages`
 
 Select spelling language
 
 ![LvimLinguisticsMENUSpellLanguages](./media/05.LvimLinguisticsMENUSpellLanguages.png)
 
--   `LvimLinguisticsTOGGLESpelling`
+- `LvimLinguisticsTOGGLESpelling`
 
 ```lua
 vim.keymap.set("n", "<C-c>s", function()
@@ -236,7 +228,7 @@ end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLESpelling" })
 
 ### Local config
 
--   `LvimLinguisticsMENUSaveCurrentConfigAsLocal`
+- `LvimLinguisticsMENUSaveCurrentConfigAsLocal`
 
 Save the current configuration for the current project (folder)
 
@@ -244,13 +236,13 @@ Save the current configuration for the current project (folder)
 
 ![LvimLinguisticsLocalConfigFile](./media/07.LvimLinguisticsLocalConfigFile.png)
 
--   `LvimLinguisticsMENUUpdateLocalConfig`
+- `LvimLinguisticsMENUUpdateLocalConfig`
 
 Update the current configuration for the current project (folder)
 
 ![LvimLinguisticsMENUUpdateLocalConfig](./media/08.LvimLinguisticsMENUUpdateLocalConfig.png)
 
--   `LvimLinguisticsMENUDeleteLocalConfig`
+- `LvimLinguisticsMENUDeleteLocalConfig`
 
 Delete a file for the current project (folder)
 
@@ -260,7 +252,7 @@ Delete a file for the current project (folder)
 
 You can add custom statusline component for Spell status
 
--   Example for Heirline:
+- Example for Heirline:
 
 ```lua
 local spell = {
