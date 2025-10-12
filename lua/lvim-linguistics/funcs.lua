@@ -1,44 +1,24 @@
 local config = require("lvim-linguistics.config")
 local utils = require("lvim-linguistics.utils")
-local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", {
-    clear = true,
-})
-local group_spell_enabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellEnabled", {
-    clear = true,
-})
-local group_spell_disabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellDisabled", {
-    clear = true,
-})
+
+local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", { clear = true })
+local group_spell_enabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellEnabled", { clear = true })
+local group_spell_disabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellDisabled", { clear = true })
 
 local M = {}
 
 M.check_dir = function()
-    if utils.exists(config.plugin_config.spell_files_folder) == false then
+    if not utils.exists(config.plugin_config.spell_files_folder) then
         utils.create_dir(config.plugin_config.spell_files_folder)
     end
 end
 
 M.get_config = function()
     local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
-    if local_config ~= nil then
+    if local_config then
         _G.LVIM_LINGUISTICS = local_config
     else
         _G.LVIM_LINGUISTICS = config.base_config
-    end
-end
-
-M.proccess = function()
-    if type(_G.LVIM_LINGUISTICS) == "table" then
-        if _G.LVIM_LINGUISTICS.mode_language.active == true then
-            M.enable_insert_mode_language()
-        else
-            M.disable_insert_mode_language()
-        end
-        if _G.LVIM_LINGUISTICS.spell.active == true then
-            M.enable_spelling()
-        else
-            M.disable_spelling()
-        end
     end
 end
 
@@ -47,49 +27,24 @@ M.insert_mode_language = function(language)
 end
 
 M.enable_insert_mode_language = function()
-    if
-        _G.LVIM_LINGUISTICS.mode_language.normal_mode_language == nil
-        or type(_G.LVIM_LINGUISTICS.mode_language.normal_mode_language) ~= "string"
-    then
-        vim.notify("Not defined language for normal mode", vim.log.levels.ERROR, {
+    local cfg = _G.LVIM_LINGUISTICS.mode_language
+    if type(cfg.normal_mode_language) ~= "string" or type(cfg.insert_mode_language) ~= "string" then
+        vim.notify("Invalid insert/normal mode language definitions", vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
     end
-    if
-        _G.LVIM_LINGUISTICS.mode_language.insert_mode_language == nil
-        or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_language) ~= "string"
-    then
-        vim.notify("Not defined language for insert mode", vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
-        return
+    cfg.active = true
+    local function set_kbrd(lang)
+        pcall(function()
+            os.execute(config.plugin_config.kbrd_cmd .. lang .. " &> /dev/null")
+        end)
     end
-    _G.LVIM_LINGUISTICS.mode_language.active = true
     vim.api.nvim_create_autocmd("InsertEnter", {
         pattern = "*",
         callback = function()
-            local ft = vim.bo.filetype
-            if next(_G.LVIM_LINGUISTICS.mode_language.file_types.white_list) then
-                if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
-                    pcall(function()
-                        os.execute(
-                            config.plugin_config.kbrd_cmd
-                                .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language
-                                .. "&> /dev/null"
-                        )
-                    end)
-                end
-            else
-                if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
-                    pcall(function()
-                        os.execute(
-                            config.plugin_config.kbrd_cmd
-                                .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language
-                                .. "&> /dev/null"
-                        )
-                    end)
-                end
+            if not vim.tbl_contains(cfg.file_types.black_list, vim.bo.filetype) then
+                set_kbrd(cfg.insert_mode_language)
             end
         end,
         group = group_change_mode,
@@ -97,27 +52,8 @@ M.enable_insert_mode_language = function()
     vim.api.nvim_create_autocmd("InsertLeave", {
         pattern = "*",
         callback = function()
-            local ft = vim.bo.filetype
-            if next(_G.LVIM_LINGUISTICS.mode_language.file_types.white_list) then
-                if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
-                    pcall(function()
-                        os.execute(
-                            config.plugin_config.kbrd_cmd
-                                .. _G.LVIM_LINGUISTICS.mode_language.normal_mode_language
-                                .. "&> /dev/null"
-                        )
-                    end)
-                end
-            else
-                if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
-                    pcall(function()
-                        os.execute(
-                            config.plugin_config.kbrd_cmd
-                                .. _G.LVIM_LINGUISTICS.mode_language.normal_mode_language
-                                .. "&> /dev/null"
-                        )
-                    end)
-                end
+            if not vim.tbl_contains(cfg.file_types.black_list, vim.bo.filetype) then
+                set_kbrd(cfg.normal_mode_language)
             end
         end,
         group = group_change_mode,
@@ -126,91 +62,77 @@ end
 
 M.disable_insert_mode_language = function()
     _G.LVIM_LINGUISTICS.mode_language.active = false
-    local autocommands = vim.api.nvim_get_autocmds({
-        group = group_change_mode,
-    })
     pcall(function()
-        vim.api.nvim_del_autocmd(autocommands[1]["id"])
-        vim.api.nvim_del_autocmd(autocommands[2]["id"])
+        for _, ac in ipairs(vim.api.nvim_get_autocmds({ group = group_change_mode })) do
+            vim.api.nvim_del_autocmd(ac.id)
+        end
     end)
 end
 
 M.toggle_insert_mode_language = function()
-    if _G.LVIM_LINGUISTICS.mode_language.active == true then
+    if _G.LVIM_LINGUISTICS.mode_language.active then
         M.disable_insert_mode_language()
-        vim.notify("Insert mode language disabled", vim.log.levels.INFO, {
-            title = "LVIM LINGUISTICS",
-        })
+        vim.notify("Insert mode language disabled", vim.log.levels.INFO)
     else
         M.enable_insert_mode_language()
-        vim.notify("Insert mode language enabled", vim.log.levels.INFO, {
-            title = "LVIM LINGUISTICS",
-        })
+        vim.notify("Insert mode language enabled", vim.log.levels.INFO)
     end
 end
 
-M.change_spell_language = function(language)
-    _G.LVIM_LINGUISTICS.spell.language = language
+local function ensure_dictionary(lang_code, target_path)
+    if vim.fn.filereadable(target_path) == 1 then
+        return true
+    end
+    local url = string.format("https://ftp.nluug.nl/vim/runtime/spell/%s.utf-8.spl", lang_code)
+    vim.notify("Downloading dictionary: " .. lang_code, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+    local cmd = string.format("curl -fsSL '%s' -o '%s'", url, target_path)
+    local result = os.execute(cmd)
+    if result ~= 0 then
+        vim.notify("Failed to download: " .. url, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+        return false
+    end
+    return true
 end
 
 M.enable_spelling = function()
-    if _G.LVIM_LINGUISTICS.spell.language == nil or type(_G.LVIM_LINGUISTICS.spell.language) ~= "string" then
-        vim.notify("Not defined language(s)", vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
+    local spell_cfg = _G.LVIM_LINGUISTICS.spell
+    local lang_key = spell_cfg.language
+    if not lang_key or type(lang_key) ~= "string" then
+        vim.notify("Not defined language(s)", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
         return
     end
-    if _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language] == nil then
-        vim.notify("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language, vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
+    local lang_info = spell_cfg.languages[lang_key]
+    if not lang_info then
+        vim.notify("Not defined settings for: " .. lang_key, vim.log.levels.ERROR)
         return
     end
-    local spelllang = _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language].spelllang
-    local spellfile = _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language].spellfile
-    if spelllang == nil or type(spelllang) ~= "string" then
-        vim.notify("Incorrect defined spell file for: " .. _G.LVIM_LINGUISTICS.spell.language, vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
+    local spelllang = lang_info.spelllang
+    local spellfile = lang_info.spellfile or "global.add"
+    if not spelllang then
+        vim.notify("Invalid spelllang for: " .. lang_key, vim.log.levels.ERROR)
         return
     end
-    if spellfile == nil or type(spellfile) ~= "string" then
-        spellfile = "global.add"
-    end
+    local folder = config.plugin_config.spell_files_folder
+    M.check_dir()
+    local dict_path = folder .. "/" .. spelllang .. ".utf-8.spl"
+    ensure_dictionary(spelllang, dict_path)
     local function spell()
         local ft = vim.bo.filetype
-        local cmd = "setlocal spell spelllang="
-            .. spelllang
-            .. " spellfile="
-            .. config.plugin_config.spell_files_folder
-            .. spellfile
-        if type(_G.LVIM_LINGUISTICS) == "table" then
-            if next(_G.LVIM_LINGUISTICS.spell.file_types.white_list) then
-                if vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.white_list, ft) then
-                    vim.cmd(cmd)
-                end
-            else
-                if not vim.tbl_contains(_G.LVIM_LINGUISTICS.spell.file_types.black_list, ft) then
-                    _G.LVIM_LINGUISTICS.spell.active = true
-                    vim.cmd(cmd)
-                end
-            end
+        if not vim.tbl_contains(spell_cfg.file_types.black_list, ft) then
+            vim.cmd(string.format("setlocal spell spelllang=%s spellfile=%s/%s", spelllang, folder, spellfile))
+            spell_cfg.active = true
         end
     end
     spell()
     vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
-        callback = function()
-            spell()
-        end,
+        callback = spell,
         group = group_spell_enabled,
     })
     pcall(function()
-        local autocommands = vim.api.nvim_get_autocmds({
-            group = group_spell_disabled,
-        })
-        vim.api.nvim_del_autocmd(autocommands[1]["id"])
+        for _, ac in ipairs(vim.api.nvim_get_autocmds({ group = group_spell_disabled })) do
+            vim.api.nvim_del_autocmd(ac.id)
+        end
     end)
-    _G.LVIM_LINGUISTICS.spell.active = true
 end
 
 M.disable_spelling = function()
@@ -222,25 +144,49 @@ M.disable_spelling = function()
         group = group_spell_disabled,
     })
     pcall(function()
-        local autocommands = vim.api.nvim_get_autocmds({
-            group = group_spell_enabled,
-        })
-        vim.api.nvim_del_autocmd(autocommands[1]["id"])
+        for _, ac in ipairs(vim.api.nvim_get_autocmds({ group = group_spell_enabled })) do
+            vim.api.nvim_del_autocmd(ac.id)
+        end
     end)
     _G.LVIM_LINGUISTICS.spell.active = false
 end
 
 M.toggle_spelling = function()
-    if _G.LVIM_LINGUISTICS.spell.active == true then
+    if _G.LVIM_LINGUISTICS.spell.active then
         M.disable_spelling()
-        vim.notify("Spelling disabled", vim.log.levels.INFO, {
-            title = "LVIM LINGUISTICS",
-        })
+        vim.notify("Spelling disabled", vim.log.levels.INFO)
     else
         M.enable_spelling()
-        vim.notify("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", vim.log.levels.INFO, {
-            title = "LVIM LINGUISTICS",
-        })
+        vim.notify("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", vim.log.levels.INFO)
+    end
+end
+
+M.proccess = function()
+    if type(_G.LVIM_LINGUISTICS) ~= "table" then
+        return
+    end
+    local cfg = _G.LVIM_LINGUISTICS
+    if cfg.mode_language.active then
+        M.enable_insert_mode_language()
+    end
+    if cfg.spell.active then
+        M.enable_spelling()
+    end
+end
+
+M.change_spell_language = function(language)
+    if not language or type(language) ~= "string" then
+        vim.notify("Invalid spell language", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+        return
+    end
+    if not _G.LVIM_LINGUISTICS.spell.languages[language] then
+        vim.notify("Unknown spell language: " .. language, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+        return
+    end
+    _G.LVIM_LINGUISTICS.spell.language = language
+    vim.notify("Spell language changed to: " .. language, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+    if _G.LVIM_LINGUISTICS.spell.active then
+        M.enable_spelling()
     end
 end
 
