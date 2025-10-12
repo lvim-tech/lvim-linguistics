@@ -1,6 +1,5 @@
 local config = require("lvim-linguistics.config")
 local utils = require("lvim-linguistics.utils")
-local notify = require("lvim-ui-config.notify")
 local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", {
     clear = true,
 })
@@ -52,7 +51,7 @@ M.enable_insert_mode_language = function()
         _G.LVIM_LINGUISTICS.mode_language.normal_mode_language == nil
         or type(_G.LVIM_LINGUISTICS.mode_language.normal_mode_language) ~= "string"
     then
-        notify.error("Not defined language for normal mode", {
+        vim.notify("Not defined language for normal mode", vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
@@ -61,7 +60,7 @@ M.enable_insert_mode_language = function()
         _G.LVIM_LINGUISTICS.mode_language.insert_mode_language == nil
         or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_language) ~= "string"
     then
-        notify.error("Not defined language for insert mode", {
+        vim.notify("Not defined language for insert mode", vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
@@ -139,12 +138,12 @@ end
 M.toggle_insert_mode_language = function()
     if _G.LVIM_LINGUISTICS.mode_language.active == true then
         M.disable_insert_mode_language()
-        notify.info("Insert mode language disabled", {
+        vim.notify("Insert mode language disabled", vim.log.levels.INFO, {
             title = "LVIM LINGUISTICS",
         })
     else
         M.enable_insert_mode_language()
-        notify.info("Insert mode language enabled", {
+        vim.notify("Insert mode language enabled", vim.log.levels.INFO, {
             title = "LVIM LINGUISTICS",
         })
     end
@@ -156,13 +155,13 @@ end
 
 M.enable_spelling = function()
     if _G.LVIM_LINGUISTICS.spell.language == nil or type(_G.LVIM_LINGUISTICS.spell.language) ~= "string" then
-        notify.error("Not defined language(s)", {
+        vim.notify("Not defined language(s)", vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
     end
     if _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language] == nil then
-        notify.error("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language, {
+        vim.notify("Not defined settings for: " .. _G.LVIM_LINGUISTICS.spell.language, vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
@@ -170,7 +169,7 @@ M.enable_spelling = function()
     local spelllang = _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language].spelllang
     local spellfile = _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language].spellfile
     if spelllang == nil or type(spelllang) ~= "string" then
-        notify.error("Incorrect defined spell file for: " .. _G.LVIM_LINGUISTICS.spell.language, {
+        vim.notify("Incorrect defined spell file for: " .. _G.LVIM_LINGUISTICS.spell.language, vim.log.levels.ERROR, {
             title = "LVIM LINGUISTICS",
         })
         return
@@ -234,12 +233,12 @@ end
 M.toggle_spelling = function()
     if _G.LVIM_LINGUISTICS.spell.active == true then
         M.disable_spelling()
-        notify.info("Spelling disabled", {
+        vim.notify("Spelling disabled", vim.log.levels.INFO, {
             title = "LVIM LINGUISTICS",
         })
     else
         M.enable_spelling()
-        notify.info("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", {
+        vim.notify("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", vim.log.levels.INFO, {
             title = "LVIM LINGUISTICS",
         })
     end
