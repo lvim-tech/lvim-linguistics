@@ -1,180 +1,149 @@
-local utils = require("lvim-linguistics.utils")
+-- lvim-linguistics: shared lvim-utils UI instance.
+-- Lazily created on first access so that lvim-utils is not required at load time.
+
 local funcs = require("lvim-linguistics.funcs")
+local utils = require("lvim-linguistics.utils")
+
+local _instance = nil
+
+--- Returns the shared lvim-utils UI instance (created once via .new()).
+--- Passes config/ui.lua popup_global so per-plugin overrides take effect.
+--- Returns nil if lvim-utils is not available.
+local function get()
+	if _instance then
+		return _instance
+	end
+	local ok, mod = pcall(require, "lvim-utils.ui")
+	if not ok then
+		return nil
+	end
+	local cfg = require("lvim-linguistics.config.ui")
+	_instance = mod.new(cfg.popup_global)
+	return _instance
+end
 
 local M = {}
 
-M.menu_spelling_status = function()
-    if _G.LVIM_LINGUISTICS.spell.language == nil then
-        vim.notify("Not defined settings for: " .. tostring(_G.LVIM_LINGUISTICS.spell.language), vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
-        return
-    end
-    if _G.LVIM_LINGUISTICS.spell.languages[_G.LVIM_LINGUISTICS.spell.language] == nil then
-        vim.notify("Not defined settings for: " .. tostring(_G.LVIM_LINGUISTICS.spell.language), vim.log.levels.ERROR, {
-            title = "LVIM LINGUISTICS",
-        })
-        return
-    end
+M.open = function(tab_selector)
+	local ui = get()
+	if not ui then
+		vim.notify("lvim-utils not available", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+		return
+	end
 
-    local spelling_status
-    if _G.LVIM_LINGUISTICS.spell.active == true then
-        spelling_status = "Active (" .. _G.LVIM_LINGUISTICS.spell.language .. ")"
-    else
-        spelling_status = "Not active"
-    end
+	local cfg = _G.LVIM_LINGUISTICS
+	if type(cfg) ~= "table" then
+		vim.notify("Plugin not initialized", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+		return
+	end
 
-    local choices = { "Enable spelling", "Disable spelling", "Cancel" }
+	local menus = require("lvim-linguistics.config.ui").menus.main
 
-    vim.ui.select(choices, { prompt = "Spelling status: " .. spelling_status }, function(choice)
-        if not choice then
-            return
-        end
-        if choice == "Enable spelling" then
-            funcs.enable_spelling()
-            vim.notify("Spelling enabled: (" .. _G.LVIM_LINGUISTICS.spell.language .. ")", vim.log.levels.INFO, {
-                title = "LVIM LINGUISTICS",
-            })
-        elseif choice == "Disable spelling" then
-            funcs.disable_spelling()
-            vim.notify("Spelling disabled", vim.log.levels.INFO, {
-                title = "LVIM LINGUISTICS",
-            })
-        end
-    end)
-end
+	-- ── Spelling tab ──────────────────────────────────────────────────────────
+	local spell_lang_options = vim.tbl_keys(cfg.spell.languages)
+	table.sort(spell_lang_options)
 
-M.menu_spell_languages = function()
-    local values_preview = {}
-    local values_choice = {}
+	local spell_rows = {
+		{
+			type = "bool",
+			name = "active",
+			label = "Enabled",
+			value = cfg.spell.active,
+			run = function(val)
+				if val then
+					funcs.enable_spelling()
+				else
+					funcs.disable_spelling()
+				end
+			end,
+		},
+		{
+			type = "select",
+			name = "language",
+			label = "Language",
+			value = cfg.spell.language or spell_lang_options[1],
+			options = spell_lang_options,
+			run = function(val)
+				funcs.change_spell_language(val)
+			end,
+		},
+	}
 
-    for k, _ in pairs(_G.LVIM_LINGUISTICS.spell.languages) do
-        local spelllang = _G.LVIM_LINGUISTICS.spell.languages[k]["spelllang"]
-        if not spelllang or type(spelllang) ~= "string" then
-            vim.notify("Incorrect defined spell file for: " .. k, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-            return
-        end
-        local spellfile = _G.LVIM_LINGUISTICS.spell.languages[k]["spellfile"] or "global.add"
-        local string_to_insert = string.upper(k)
-            .. " (spelllang - "
-            .. spelllang
-            .. ", spellfile - "
-            .. spellfile
-            .. ")"
-        table.insert(values_preview, string_to_insert)
-        values_choice[string_to_insert] = k
-    end
+	-- ── Insert mode tab ───────────────────────────────────────────────────────
+	local insert_langs = cfg.mode_language.insert_mode_languages or {}
 
-    table.insert(values_preview, "Cancel")
+	local insert_rows = {
+		{
+			type = "bool",
+			name = "active",
+			label = "Enabled",
+			value = cfg.mode_language.active,
+			run = function(val)
+				if val then
+					funcs.enable_insert_mode_language()
+				else
+					funcs.disable_insert_mode_language()
+				end
+			end,
+		},
+	}
 
-    vim.ui.select(values_preview, { prompt = "Choice language(s) for spelling" }, function(choice)
-        if not choice or choice == "Cancel" then
-            return
-        end
-        funcs.change_spell_language(values_choice[choice])
-        funcs.disable_spelling()
-        funcs.enable_spelling()
-    end)
-end
+	if #insert_langs > 0 then
+		table.insert(insert_rows, {
+			type = "select",
+			name = "insert_mode_language",
+			label = "Insert Language",
+			value = cfg.mode_language.insert_mode_language or insert_langs[1],
+			options = insert_langs,
+			run = function(val)
+				funcs.insert_mode_language(val)
+			end,
+		})
+	end
 
-M.menu_insert_mode_status = function()
-    if
-        not _G.LVIM_LINGUISTICS.mode_language.normal_mode_language
-        or type(_G.LVIM_LINGUISTICS.mode_language.normal_mode_language) ~= "string"
-    then
-        vim.notify("Not defined language for normal mode", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-        return
-    end
-    if
-        not _G.LVIM_LINGUISTICS.mode_language.insert_mode_language
-        or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_language) ~= "string"
-    then
-        vim.notify("Not defined language for insert mode", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-        return
-    end
+	-- ── Config tab ────────────────────────────────────────────────────────────
+	local cwd = vim.fn.getcwd()
+	local local_config_path = cwd .. "/.lvim_linguistics.json"
 
-    local insert_mode_status
-    if _G.LVIM_LINGUISTICS.mode_language.active == true then
-        insert_mode_status = "Active (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")"
-    else
-        insert_mode_status = "Not active"
-    end
+	local config_rows = {
+		{
+			type = "spacer",
+			label = "Path: " .. cwd,
+		},
+		{ type = "spacer_line" },
+		{
+			type = "action",
+			label = "Save as local config",
+			run = function(_, close)
+				utils.write_file(local_config_path, cfg)
+				vim.notify("Config saved: " .. local_config_path, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+				close(true, nil)
+			end,
+		},
+		{
+			type = "action",
+			label = "Delete local config",
+			run = function(_, close)
+				if utils.exists(local_config_path) then
+					utils.delete_file(local_config_path)
+					vim.notify("Config deleted", vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+				else
+					vim.notify("No local config found", vim.log.levels.WARN, { title = "LVIM LINGUISTICS" })
+				end
+				close(true, nil)
+			end,
+		},
+	}
 
-    local choices = { "Enable insert mode language", "Disable insert mode language", "Cancel" }
-
-    vim.ui.select(choices, { prompt = "Insert mode language status: " .. insert_mode_status }, function(choice)
-        if not choice then
-            return
-        end
-        if choice == "Enable insert mode language" then
-            funcs.enable_insert_mode_language()
-            vim.notify(
-                "Insert mode language enabled: (" .. _G.LVIM_LINGUISTICS.mode_language.insert_mode_language .. ")",
-                vim.log.levels.INFO,
-                { title = "LVIM LINGUISTICS" }
-            )
-        elseif choice == "Disable insert mode language" then
-            funcs.disable_insert_mode_language()
-            vim.notify("Insert mode language disabled", vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
-        end
-    end)
-end
-
-M.menu_insert_mode_language = function()
-    if
-        not _G.LVIM_LINGUISTICS.mode_language.insert_mode_languages
-        or type(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) ~= "table"
-    then
-        vim.notify("Not defined any languages", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-        return
-    end
-
-    local values_preview = {}
-    local values_choice = {}
-    for _, v in ipairs(_G.LVIM_LINGUISTICS.mode_language.insert_mode_languages) do
-        table.insert(values_preview, string.upper(v))
-        values_choice[string.upper(v)] = v
-    end
-
-    vim.ui.select(values_preview, { prompt = "Choice language for insert mode" }, function(choice)
-        if not choice or choice == "Cancel" then
-            return
-        end
-        funcs.insert_mode_language(values_choice[choice])
-    end)
-end
-
-M.menu_save_current_config_as_local = function()
-    local choices = { "Show current path", "Save", "Cancel" }
-
-    vim.ui.select(choices, { prompt = "Save current config as local" }, function(choice)
-        if not choice then
-            return
-        end
-        if choice == "Show current path" then
-            vim.notify(vim.inspect(vim.fn.getcwd()), vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
-        elseif choice == "Save" then
-            utils.write_file(vim.fn.getcwd() .. "/.lvim_linguistics.json", _G.LVIM_LINGUISTICS)
-        end
-    end)
-end
-
-M.menu_delete_local_config = function()
-    local choices = { "Delete", "Cancel" }
-
-    vim.ui.select(choices, { prompt = "Delete local config file" }, function(choice)
-        if not choice then
-            return
-        end
-        if choice == "Delete" then
-            local file_path = vim.fn.getcwd() .. "/.lvim_linguistics.json"
-            if utils.exists(file_path) then
-                utils.delete_file(file_path)
-            else
-                vim.notify("File not exist", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-            end
-        end
-    end)
+	ui.tabs({
+		title        = menus.title,
+		tab_selector = tab_selector,
+		tabs = {
+			{ label = menus.tabs.spelling.label,    icon = menus.tabs.spelling.icon,    rows = spell_rows },
+			{ label = menus.tabs.insert_mode.label, icon = menus.tabs.insert_mode.icon, rows = insert_rows },
+			{ label = menus.tabs.config.label,      icon = menus.tabs.config.icon,      rows = config_rows },
+		},
+	})
 end
 
 return M

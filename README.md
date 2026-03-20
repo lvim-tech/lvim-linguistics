@@ -4,20 +4,61 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/lvim-tech/lvim-helper/blob/main/LICENSE)
 
-## DESCRIPTION
+## Description
 
-Lvim Linguistics is a plug-in for controlling spelling and keyboard language in insert mode (when writing a document in
-a different language).
+Lvim Linguistics is a plugin for controlling spelling and keyboard language in insert mode (useful when writing documents in a foreign language).
 
-> This plug-in is support local config for projects (directories)
+> Supports per-project local config (`.lvim_linguistics.json` in the project root)
 
-> Current version - 1.1.00 (2025-10-12)
+> Current version - 1.2.00 (2026-03-20)
 
-## Requirements:
+## Requirements
 
-- [xkb-switch](https://github.com/grwlf/xkb-switch) - to switch the keyboard (you can use another mechanism)
+Keyboard switching depends on your display server. The plugin auto-detects the session and picks the right tool:
 
-## Init
+| Session            | Tool                                              |
+| ------------------ | ------------------------------------------------- |
+| X11                | [xkb-switch](https://github.com/grwlf/xkb-switch) |
+| Wayland — Hyprland | `hyprctl` (bundled with Hyprland)                 |
+| Wayland — niri     | `niri` (bundled)                                  |
+| Wayland — sway     | `swaymsg` (bundled)                               |
+| Wayland — mango    | [mmsg](https://github.com/mangowm/mango)          |
+| Wayland — GNOME    | `gdbus` (bundled with GLib)                       |
+
+> You can always override `kbrd_cmd` manually — see configuration below.
+
+## Setup
+
+### lazy.nvim
+
+```lua
+{
+    "lvim-tech/lvim-linguistics",
+    event = "VimEnter",
+    config = function()
+        require("lvim-linguistics").setup({
+            -- your overrides here
+        })
+    end,
+}
+```
+
+### Native (Neovim built-in packages)
+
+```sh
+git clone https://github.com/lvim-tech/lvim-linguistics \
+    ~/.local/share/nvim/site/pack/plugins/start/lvim-linguistics
+```
+
+Then in your `init.lua`:
+
+```lua
+require("lvim-linguistics").setup({
+    -- your overrides here
+})
+```
+
+### packer.nvim
 
 ```lua
 use({
@@ -25,95 +66,56 @@ use({
     event = "VimEnter",
     config = function()
         require("lvim-linguistics").setup({
-            -- your config
+            -- your overrides here
         })
     end,
 })
 ```
 
-## Default config
+## Configuration
+
+### plugin_config
 
 ```lua
 plugin_config = {
-    kbrd_cmd = "xkb-switch -s ",
+    -- Keyboard switch command. Auto-detected from XDG_SESSION_TYPE /
+    -- XDG_CURRENT_DESKTOP / WAYLAND_DISPLAY at startup.
+    -- Can be a string prefix ("xkb-switch -s ") or a function:
+    --
+    --   kbrd_cmd = function(lang)
+    --       local idx = { en = 0, bg = 1 }
+    --       return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
+    --   end
+    --
+    kbrd_cmd = "<auto-detected>",
+
+    -- Folder where spell files (.spl) are stored.
+    -- Files are downloaded automatically on first use (async, no blocking).
     spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
 },
+```
+
+### base_config
+
+```lua
 base_config = {
     mode_language = {
         active = false,
         file_types = {
-            black_list = {
-                "alpha",
-                "ctrlspace",
-                "ctrlspace_help",
-                "packer",
-                "undotree",
-                "diff",
-                "Outline",
-                "NvimTree",
-                "LvimHelper",
-                "floaterm",
-                "toggleterm",
-                "Trouble",
-                "dashboard",
-                "vista",
-                "spectre_panel",
-                "DiffviewFiles",
-                "flutterToolsOutline",
-                "log",
-                "qf",
-                "dapui_scopes",
-                "dapui_breakpoints",
-                "dapui_stacks",
-                "dapui_watches",
-                "calendar",
-                "octo",
-                "neo-tree",
-                "neo-tree-popup",
-                "noice",
-            },
+            black_list = { ... }, -- filetypes where switching is disabled
             white_list = {},
         },
-        normal_mode_language = nil,
-        insert_mode_language = nil,
-        insert_mode_languages = {},
+        normal_mode_language = nil, -- layout name used in Normal mode
+        insert_mode_language = nil, -- layout name used in Insert mode
+        insert_mode_languages = {}, -- selectable layouts in the UI
     },
     spell = {
         active = false,
         file_types = {
-            black_list = {
-                "alpha",
-                "ctrlspace",
-                "ctrlspace_help",
-                "packer",
-                "undotree",
-                "diff",
-                "Outline",
-                "NvimTree",
-                "LvimHelper",
-                "floaterm",
-                "toggleterm",
-                "Trouble",
-                "dashboard",
-                "vista",
-                "spectre_panel",
-                "DiffviewFiles",
-                "flutterToolsOutline",
-                "log",
-                "qf",
-                "dapui_scopes",
-                "dapui_breakpoints",
-                "dapui_stacks",
-                "dapui_watches",
-                "calendar",
-                "octo",
-                "neo-tree",
-                "neo-tree-popup",
-                "noice",
-            },
+            black_list = { ... },
             white_list = {},
         },
-        language = nil,
+        language = nil, -- active language key (must exist in languages)
         languages = {
             en = {
                 spelllang = "en",
@@ -124,139 +126,116 @@ base_config = {
 }
 ```
 
-- `kbrd_cmd` - command for switch keyboard
-
-- `spell_files_folder` - folder to save spell files
-
-- `base_config` - config for mode language and spelling
-
-- `base_config` example:
+### Full example
 
 ```lua
-base_config = {
-    mode_language = {
-        active = true, -- changing the keyboard language start automatically
-        white_list = {
-            "tex", -- active is true only for tex filetype
+require("lvim-linguistics").setup({
+    base_config = {
+        mode_language = {
+            active = true,
+            file_types = {
+                white_list = { "tex", "markdown" },
+            },
+            normal_mode_language = "us",
+            insert_mode_language = "bg",
+            insert_mode_languages = { "bg", "de", "fr" },
         },
-        normal_mode_language = "us", -- keyboard language (normal mode)
-        insert_mode_language = "fr", -- keyboard language (insert mode)
-        insert_mode_languages = { "fr", "de" }, -- you can choice language for insert mode
-    },
-    spell = {
-        active = true, -- spelling start automatically
-        white_list = {
-            "tex", -- active is true only for tex filetype
-        },
-        language = "ft", -- language for spellin
-        languages = { -- you can choice language for spelling
-            en = {
-                spelllang = "en",
-                spellfile = "en.add",
-            }, -- config for en
-            fr = {
-                spelllang = "fr",
-                spellfile = "fr.add",
-            }, -- config for fr
-            de = {
-                spelllang = "de",
-                spellfile = "de.add",
-            }, -- config for de
-            en_fr = {
-                spelllang = "en,fr",
-                spellfile = "en_fr.add",
-            }, -- config for en + fr
+        spell = {
+            active = true,
+            file_types = {
+                white_list = { "tex", "markdown" },
+            },
+            language = "en",
+            languages = {
+                en = { spelllang = "en", spellfile = "en.add" },
+                bg = { spelllang = "bg", spellfile = "bg.add" },
+                en_bg = { spelllang = "en,bg", spellfile = "en_bg.add" },
+            },
         },
     },
-}
+})
 ```
+
+> For Hyprland / mango (index-based layout switching), use a function for `kbrd_cmd`:
+>
+> ```lua
+> plugin_config = {
+>     kbrd_cmd = function(lang)
+>         local idx = { en = 0, bg = 1 }
+>         return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
+>     end,
+> },
+> ```
 
 ## Commands
 
-### Mode language
+All functionality is exposed through a single command with subcommands:
 
-- `LvimLinguisticsMENUInsertModeStatus`
-
-Enable / Disable changing language in insert mode
-
-![LvimLinguisticsMENUInsertModeStatus](./media/01.LvimLinguisticsMENUInsertModeStatus.png)
-
-- `LvimLinguisticsMENUInsertModeLanguage`
-
-Language selection for insert mode
-
-![LvimLinguisticsMENUInsertModeLanguage](./media/02.LvimLinguisticsMENUInsertModeLanguage.png)
-
-- `LvimLinguisticsTOGGLEInsertModeLanguage`
-
-You can set a keymap for this command to enable/disable
-
-```lua
-vim.keymap.set("n", "<C-c>l", function()
-    vim.cmd("LvimLinguisticsTOGGLEInsertModeLanguage")
-end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLEInsertModeLanguage" })
+```
+:LvimLinguistics [subcommand]
 ```
 
-![LvimLinguisticsTOGGLEInsertModeLanguage](./media/03.LvimLinguisticsTOGGLEInsertModeLanguage.png)
+| Subcommand           | Description                                  |
+| -------------------- | -------------------------------------------- |
+| _(none)_             | Open the main UI panel                       |
+| `spelling`           | Open the UI on the Spelling tab              |
+| `insert-mode`        | Open the UI on the Insert Mode tab           |
+| `config`             | Open the UI on the Config tab                |
+| `toggle-spelling`    | Toggle spell checking on/off                 |
+| `toggle-insert-mode` | Toggle insert-mode language switching on/off |
 
-### Spell
-
-- `LvimLinguisticsMENUSpellingStatus`
-
-Enable / Disable spelling
-
-![LvimLinguisticsMENUSpellingStatus](./media/04.LvimLinguisticsMENUSpellingStatus.png)
-
-- `LvimLinguisticsMENUSpellLanguages`
-
-Select spelling language
-
-![LvimLinguisticsMENUSpellLanguages](./media/05.LvimLinguisticsMENUSpellLanguages.png)
-
-- `LvimLinguisticsTOGGLESpelling`
+### Keymaps example
 
 ```lua
-vim.keymap.set("n", "<C-c>s", function()
-    vim.cmd("LvimLinguisticsTOGGLESpelling")
-end, { noremap = true, silent = true, desc = "LvimLinguisticsTOGGLESpelling" })
+vim.keymap.set(
+    "n",
+    "<C-c>s",
+    "<cmd>LvimLinguistics toggle-spelling<cr>",
+    { noremap = true, silent = true, desc = "Toggle spelling" }
+)
+
+vim.keymap.set(
+    "n",
+    "<C-c>l",
+    "<cmd>LvimLinguistics toggle-insert-mode<cr>",
+    { noremap = true, silent = true, desc = "Toggle insert mode language" }
+)
 ```
 
-![LvimLinguisticsTOGGLESpelling](./media/06.LvimLinguisticsTOGGLESpelling.png)
+## Spell files
 
-### Local config
+Spell files (`.spl`) are downloaded automatically from the Vim FTP mirror the first time a language is activated. The download is **non-blocking** — Neovim stays responsive and a notification appears when the file is ready.
 
-- `LvimLinguisticsMENUSaveCurrentConfigAsLocal`
+## Highlights
 
-Save the current configuration for the current project (folder)
+The plugin defines the following highlight groups via `lvim-utils.highlight`. They adapt automatically to palette changes (e.g. when switching colorschemes via `lvim-colorscheme`).
 
-![LvimLinguisticsMENUSaveCurrentConfigAsLocal](./media/07.LvimLinguisticsMENUSaveCurrentConfigAsLocal.png)
+| Group                        | Default color  | Purpose                           |
+| ---------------------------- | -------------- | --------------------------------- |
+| `LvimLinguisticsIcon`        | teal           | General icons                     |
+| `LvimLinguisticsSpellActive` | green          | Active spell indicator            |
+| `LvimLinguisticsSpellLang`   | blue           | Language name                     |
+| `LvimLinguisticsSpellSep`    | blue (blended) | Separator                         |
+| `LvimLinguisticsLangActive`  | purple bold    | Active language in mode switching |
+| `LvimLinguisticsLangNormal`  | teal           | Normal mode language              |
+| `LvimLinguisticsLangInsert`  | yellow         | Insert mode language              |
 
-![LvimLinguisticsLocalConfigFile](./media/07.LvimLinguisticsLocalConfigFile.png)
-
-- `LvimLinguisticsMENUUpdateLocalConfig`
-
-Update the current configuration for the current project (folder)
-
-![LvimLinguisticsMENUUpdateLocalConfig](./media/08.LvimLinguisticsMENUUpdateLocalConfig.png)
-
-- `LvimLinguisticsMENUDeleteLocalConfig`
-
-Delete a file for the current project (folder)
-
-![LvimLinguisticsMENUDeleteLocalConfig](./media/09.LvimLinguisticsMENUDeleteLocalConfig.png)
-
-## Status
-
-You can add custom statusline component for Spell status
-
-- Example for Heirline:
+Override in your colorscheme or config:
 
 ```lua
+vim.api.nvim_set_hl(0, "LvimLinguisticsSpellActive", { fg = "#your_color" })
+```
+
+## Statusline integration
+
+```lua
+-- Heirline example
 local spell = {
-    condition = require("lvim-linguistics.status").spell_has,
+    condition = function()
+        return require("lvim-linguistics.status").spell_has()
+    end,
     provider = function()
-        local status = require("lvim-linguistics.status").spell_get()
-        return status
+        return require("lvim-linguistics.status").spell_get()
     end,
     hl = { fg = "#YOUR_COLOR", bold = true },
 }

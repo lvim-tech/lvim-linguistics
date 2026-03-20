@@ -34,29 +34,18 @@ M.is_array = function(t)
 end
 
 M.map = function(mode, lhs, rhs, opts)
-    local options = { noremap = true }
-    if opts then
-        options = vim.tbl_extend("force", options, opts)
-    end
-    vim.api.nvim_set_keymap(mode, lhs, rhs, options)
+    vim.keymap.set(mode, lhs, rhs, vim.tbl_extend("force", { noremap = true }, opts or {}))
 end
 
 M.read_file = function(file)
     local content
-    local file_content_ok = pcall(function()
+    local ok = pcall(function()
         content = vim.fn.readfile(file)
     end)
-    if not file_content_ok then
+    if not ok or type(content) ~= "table" or next(content) == nil then
         return nil
     end
-    if type(content) == "table" then
-        if next(content) == nil then
-            return nil
-        end
-        return vim.fn.json_decode(content)
-    else
-        return nil
-    end
+    return vim.fn.json_decode(content)
 end
 
 M.write_file = function(file, content)
@@ -75,17 +64,11 @@ M.delete_file = function(f)
 end
 
 M.create_dir = function(dirname)
-    os.execute("mkdir " .. dirname)
+    vim.fn.mkdir(dirname, "p")
 end
 
 M.exists = function(name)
-    local f = io.open(name, "r")
-    if f ~= nil then
-        io.close(f)
-        return true
-    else
-        return false
-    end
+    return (vim.uv or vim.loop).fs_stat(name) ~= nil
 end
 
 return M

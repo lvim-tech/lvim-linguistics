@@ -18,7 +18,7 @@ M.get_config = function()
     if local_config then
         _G.LVIM_LINGUISTICS = local_config
     else
-        _G.LVIM_LINGUISTICS = config.base_config
+        _G.LVIM_LINGUISTICS = vim.deepcopy(config.base_config)
     end
 end
 
@@ -37,7 +37,14 @@ M.enable_insert_mode_language = function()
     cfg.active = true
     local function set_kbrd(lang)
         pcall(function()
-            os.execute(config.plugin_config.kbrd_cmd .. lang .. " &> /dev/null")
+            local cmd = config.plugin_config.kbrd_cmd
+            local full_cmd
+            if type(cmd) == "function" then
+                full_cmd = cmd(lang)
+            else
+                full_cmd = cmd .. lang
+            end
+            os.execute(full_cmd .. " > /dev/null 2>&1")
         end)
     end
     vim.api.nvim_create_autocmd("InsertEnter", {
@@ -79,19 +86,25 @@ M.toggle_insert_mode_language = function()
     end
 end
 
-local function ensure_dictionary(lang_code, target_path)
+local function ensure_dictionary(lang_code, target_path, on_ready)
     if vim.fn.filereadable(target_path) == 1 then
-        return true
+        if on_ready then on_ready() end
+        return
     end
     local url = string.format("https://ftp.nluug.nl/vim/runtime/spell/%s.utf-8.spl", lang_code)
     vim.notify("Downloading dictionary: " .. lang_code, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
-    local cmd = string.format("curl -fsSL '%s' -o '%s'", url, target_path)
-    local result = os.execute(cmd)
-    if result ~= 0 then
-        vim.notify("Failed to download: " .. url, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-        return false
-    end
-    return true
+    vim.fn.jobstart({ "curl", "-fsSL", url, "-o", target_path }, {
+        on_exit = function(_, code)
+            vim.schedule(function()
+                if code == 0 then
+                    vim.notify("Dictionary ready: " .. lang_code, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+                    if on_ready then on_ready() end
+                else
+                    vim.notify("Failed to download dictionary: " .. lang_code, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+                end
+            end)
+        end,
+    })
 end
 
 M.enable_spelling = function()
@@ -113,9 +126,7 @@ M.enable_spelling = function()
         return
     end
     local folder = config.plugin_config.spell_files_folder
-    M.check_dir()
     local dict_path = folder .. "/" .. spelllang .. ".utf-8.spl"
-    ensure_dictionary(spelllang, dict_path)
     local function spell()
         local ft = vim.bo.filetype
         if not vim.tbl_contains(spell_cfg.file_types.black_list, ft) then
@@ -123,31 +134,25 @@ M.enable_spelling = function()
             spell_cfg.active = true
         end
     end
-    spell()
+    ensure_dictionary(spelllang, dict_path, spell)
+    vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
     vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
         callback = spell,
         group = group_spell_enabled,
     })
-    pcall(function()
-        for _, ac in ipairs(vim.api.nvim_get_autocmds({ group = group_spell_disabled })) do
-            vim.api.nvim_del_autocmd(ac.id)
-        end
-    end)
+    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
 end
 
 M.disable_spelling = function()
     vim.cmd("setlocal nospell")
+    vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
+    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
     vim.api.nvim_create_autocmd("WinEnter", {
         callback = function()
             vim.cmd("setlocal nospell")
         end,
         group = group_spell_disabled,
     })
-    pcall(function()
-        for _, ac in ipairs(vim.api.nvim_get_autocmds({ group = group_spell_enabled })) do
-            vim.api.nvim_del_autocmd(ac.id)
-        end
-    end)
     _G.LVIM_LINGUISTICS.spell.active = false
 end
 
@@ -161,7 +166,7 @@ M.toggle_spelling = function()
     end
 end
 
-M.proccess = function()
+M.process = function()
     if type(_G.LVIM_LINGUISTICS) ~= "table" then
         return
     end
