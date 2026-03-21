@@ -25,6 +25,6 @@ local function build()
 end
 
 return {
-	build            = build,
-	highlights_force = false,
+	build  = build,
+	force  = false,
 }

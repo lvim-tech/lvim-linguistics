@@ -26,7 +26,7 @@ M.setup = function(user_config)
         end
 
         local hl_mod = require("lvim-linguistics.config.highlights")
-        hl.register(hl_mod.build(), hl_mod.highlights_force)
+        hl.register(hl_mod.build(), hl_mod.force)
 
         -- Install the ColorScheme autocmd so all registered groups survive a
         -- generic colorscheme change (e.g. :colorscheme foo).
@@ -36,7 +36,7 @@ M.setup = function(user_config)
         local colors_ok, colors = pcall(require, "lvim-utils.colors")
         if colors_ok then
             colors.on_change(function()
-                hl.register(hl_mod.build(), hl_mod.highlights_force)
+                hl.register(hl_mod.build(), hl_mod.force)
             end)
         end
     end
