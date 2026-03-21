@@ -34,28 +34,23 @@ Keyboard switching depends on your display server. The plugin auto-detects the s
 ```lua
 {
     "lvim-tech/lvim-linguistics",
-    event = "VimEnter",
+    dependencies = { "lvim-tech/lvim-utils" },
     config = function()
-        require("lvim-linguistics").setup({
-            -- your overrides here
-        })
+        require("lvim-linguistics").setup({ ... })
     end,
 }
 ```
 
-### Native (Neovim built-in packages)
-
-```sh
-git clone https://github.com/lvim-tech/lvim-linguistics \
-    ~/.local/share/nvim/site/pack/plugins/start/lvim-linguistics
-```
-
-Then in your `init.lua`:
+### Native (vim.pack / packadd)
 
 ```lua
-require("lvim-linguistics").setup({
-    -- your overrides here
+-- In your init.lua, after the plugin is on the runtimepath:
+vim.pack.add({
+    { src = "https://github.com/lvim-tech/lvim-utils" },
+    { src = "https://github.com/lvim-tech/lvim-linguistics" },
 })
+
+require("lvim-linguistics").setup({ ... })
 ```
 
 ### packer.nvim
@@ -63,11 +58,9 @@ require("lvim-linguistics").setup({
 ```lua
 use({
     "lvim-tech/lvim-linguistics",
-    event = "VimEnter",
+    requires = { "lvim-tech/lvim-utils" },
     config = function()
-        require("lvim-linguistics").setup({
-            -- your overrides here
-        })
+        require("lvim-linguistics").setup({ ... })
     end,
 })
 ```
