@@ -1,16 +1,12 @@
 # LVIM LINGUISTICS
 
+Lvim Linguistics controls spelling and keyboard language in insert mode — useful when
+writing documents in a foreign language. Supports per-project local config
+(`.lvim_linguistics.json` in the project root).
+
 ![LVIM LINGUISTICS](./media/lvim-linguistics.png)
 
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/lvim-tech/lvim-helper/blob/main/LICENSE)
-
-## Description
-
-Lvim Linguistics is a plugin for controlling spelling and keyboard language in insert mode (useful when writing documents in a foreign language).
-
-> Supports per-project local config (`.lvim_linguistics.json` in the project root)
-
-> Current version - 1.2.00 (2026-03-20)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://github.com/lvim-tech/lvim-linguistics/blob/main/LICENSE)
 
 ## Requirements
 
