@@ -1,8 +1,0 @@
-{
-    "neodev": {
-        "library": {
-            "enabled": true,
-            "plugins": ["lvim-linguistics", "lvim-ui-config"]
-        }
-    }
-}
