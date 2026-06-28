@@ -30,8 +30,7 @@ local shared_blacklist = {
 }
 
 local function detect_kbrd_cmd()
-    local is_wayland = (os.getenv("WAYLAND_DISPLAY") or "") ~= ""
-        or os.getenv("XDG_SESSION_TYPE") == "wayland"
+    local is_wayland = (os.getenv("WAYLAND_DISPLAY") or "") ~= "" or os.getenv("XDG_SESSION_TYPE") == "wayland"
 
     if not is_wayland then
         return "xkb-switch -s "

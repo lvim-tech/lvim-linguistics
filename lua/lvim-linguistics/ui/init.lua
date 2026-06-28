@@ -37,7 +37,8 @@ M.open = function(tab_selector)
         return
     end
 
-    local menus = require("lvim-linguistics.config.ui").menus.main
+    local cfg_ui = require("lvim-linguistics.config.ui")
+    local menus = cfg_ui.menus.main
 
     -- ── Spelling tab ──────────────────────────────────────────────────────────
     local spell_lang_options = vim.tbl_keys(cfg.spell.languages)
@@ -145,7 +146,7 @@ M.open = function(tab_selector)
         -- MENU mode: a tab's childless action rows (the config tab's Save / Delete) stay a selectable BODY list
         -- instead of collapsing into footer buttons — which `footer_hints` (the legend) would otherwise replace.
         menu = true,
-        width = 0.9,
+        width = cfg_ui.popup_global.width,
         footer_hints = true, -- bottom key-hint legend (panel keys • focused-row keys), like the control center
         -- add a BOTTOM edge (" ") so the content gets a closing border row below it (the frame defaults to none)
         border = { "", " ", "", " ", "", " ", "", " " },

@@ -8,23 +8,23 @@ local c = require("lvim-utils.colors")
 local hl = require("lvim-utils.highlight")
 
 local function build()
-	return {
-		-- ── General ───────────────────────────────────────────────────────────
-		LvimLinguisticsIcon        = { fg = c.teal },
+    return {
+        -- ── General ───────────────────────────────────────────────────────────
+        LvimLinguisticsIcon = { fg = c.teal },
 
-		-- ── Spell ─────────────────────────────────────────────────────────────
-		LvimLinguisticsSpellActive = { fg = c.green },
-		LvimLinguisticsSpellLang   = { fg = c.blue },
-		LvimLinguisticsSpellSep    = { fg = hl.blend(c.blue, c.bg, 0.5) },
+        -- ── Spell ─────────────────────────────────────────────────────────────
+        LvimLinguisticsSpellActive = { fg = c.green },
+        LvimLinguisticsSpellLang = { fg = c.blue },
+        LvimLinguisticsSpellSep = { fg = hl.blend(c.blue, c.bg, 0.5) },
 
-		-- ── Insert mode language ───────────────────────────────────────────────
-		LvimLinguisticsLangActive  = { fg = c.purple, bold = true },
-		LvimLinguisticsLangNormal  = { fg = c.teal },
-		LvimLinguisticsLangInsert  = { fg = c.yellow },
-	}
+        -- ── Insert mode language ───────────────────────────────────────────────
+        LvimLinguisticsLangActive = { fg = c.purple, bold = true },
+        LvimLinguisticsLangNormal = { fg = c.teal },
+        LvimLinguisticsLangInsert = { fg = c.yellow },
+    }
 end
 
 return {
-	build  = build,
-	force  = false,
+    build = build,
+    force = false,
 }

@@ -59,16 +59,28 @@ M.spell_file_missing = function()
             for _, ext in ipairs({ "spl", "sug" }) do
                 local url = string.format("https://ftp.nluug.nl/vim/runtime/spell/%s.utf-8.%s", lang, ext)
                 local dest = string.format("%s/%s.utf-8.%s", folder, lang, ext)
-                vim.notify("Downloading spell file: " .. lang .. "." .. ext, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+                vim.notify(
+                    "Downloading spell file: " .. lang .. "." .. ext,
+                    vim.log.levels.INFO,
+                    { title = "LVIM LINGUISTICS" }
+                )
                 vim.fn.jobstart({ "curl", "-fsSL", url, "-o", dest }, {
                     on_exit = function(_, code)
                         if code == 0 then
                             vim.schedule(function()
-                                vim.notify("Spell file ready: " .. lang, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+                                vim.notify(
+                                    "Spell file ready: " .. lang,
+                                    vim.log.levels.INFO,
+                                    { title = "LVIM LINGUISTICS" }
+                                )
                             end)
                         else
                             vim.schedule(function()
-                                vim.notify("Failed to download spell file: " .. lang, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+                                vim.notify(
+                                    "Failed to download spell file: " .. lang,
+                                    vim.log.levels.ERROR,
+                                    { title = "LVIM LINGUISTICS" }
+                                )
                             end)
                         end
                     end,

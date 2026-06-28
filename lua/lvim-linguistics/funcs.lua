@@ -88,7 +88,9 @@ end
 
 local function ensure_dictionary(lang_code, target_path, on_ready)
     if vim.fn.filereadable(target_path) == 1 then
-        if on_ready then on_ready() end
+        if on_ready then
+            on_ready()
+        end
         return
     end
     local url = string.format("https://ftp.nluug.nl/vim/runtime/spell/%s.utf-8.spl", lang_code)
@@ -98,9 +100,15 @@ local function ensure_dictionary(lang_code, target_path, on_ready)
             vim.schedule(function()
                 if code == 0 then
                     vim.notify("Dictionary ready: " .. lang_code, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
-                    if on_ready then on_ready() end
+                    if on_ready then
+                        on_ready()
+                    end
                 else
-                    vim.notify("Failed to download dictionary: " .. lang_code, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+                    vim.notify(
+                        "Failed to download dictionary: " .. lang_code,
+                        vim.log.levels.ERROR,
+                        { title = "LVIM LINGUISTICS" }
+                    )
                 end
             end)
         end,
