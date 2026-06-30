@@ -148,8 +148,6 @@ M.open = function(tab_selector)
         menu = true,
         width = cfg_ui.popup_global.width,
         footer_hints = true, -- bottom key-hint legend (panel keys • focused-row keys), like the control center
-        -- add a BOTTOM edge (" ") so the content gets a closing border row below it (the frame defaults to none)
-        border = { "", " ", "", " ", "", " ", "", " " },
         tabs = {
             { label = menus.tabs.spelling.label, icon = menus.tabs.spelling.icon, rows = spell_rows },
             { label = menus.tabs.insert_mode.label, icon = menus.tabs.insert_mode.icon, rows = insert_rows },
