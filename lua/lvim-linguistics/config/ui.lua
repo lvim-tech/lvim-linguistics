@@ -1,5 +1,9 @@
--- lvim-linguistics: UI defaults.
--- popup_global is passed to lvim-utils.ui.new() for per-instance overrides.
+-- lvim-linguistics.config.ui: UI defaults for the settings panel.
+-- popup_global is passed to lvim-utils.ui.new() for per-instance overrides (position,
+-- size, icon set, key bindings, hint labels); menus holds the panel title and tab
+-- labels/icons read by ui/init.lua.
+--
+---@module "lvim-linguistics.config.ui"
 
 return {
     popup_global = {

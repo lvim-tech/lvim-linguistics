@@ -1,0 +1,191 @@
+*lvim-linguistics.txt*        Spelling and insert-mode keyboard-language control
+
+==============================================================================
+CONTENTS                                                *lvim-linguistics*
+
+  1. Introduction ........................... |lvim-linguistics-intro|
+  2. Requirements ........................... |lvim-linguistics-requirements|
+  3. Setup .................................. |lvim-linguistics-setup|
+  4. Configuration .......................... |lvim-linguistics-config|
+  5. Local project config ................... |lvim-linguistics-local|
+  6. Panel .................................. |lvim-linguistics-panel|
+  7. Command ................................ |:LvimLinguistics|
+  8. Spell files ............................ |lvim-linguistics-spellfiles|
+  9. Statusline ............................. |lvim-linguistics-statusline|
+  10. Highlights ............................ |lvim-linguistics-highlights|
+  11. Health ................................ |lvim-linguistics-health|
+
+==============================================================================
+1. INTRODUCTION                                   *lvim-linguistics-intro*
+
+lvim-linguistics controls two things, useful when writing in a foreign
+language:
+
+  • Spelling — enables 'spell' with a chosen language on allowed buffers and
+    downloads the dictionary (.spl) on demand from the Vim FTP mirror.
+  • Insert-mode keyboard language — flips the OS keyboard layout on
+    InsertEnter and restores it on InsertLeave, gated per filetype.
+
+Both features honour a per-filetype allow-list: a `black_list` (never active
+there) and, when non-empty, a `white_list` (active ONLY there). The active
+profile is per working directory and may be persisted to a project-local
+`.lvim_linguistics.json` (see |lvim-linguistics-local|).
+
+==============================================================================
+2. REQUIREMENTS                             *lvim-linguistics-requirements*
+
+  • Neovim >= 0.10
+  • lvim-utils (palette + merge + the settings-panel UI)
+  • curl (to download spell files / dictionaries)
+  • a keyboard-layout switch tool for your session, auto-detected:
+
+    Session              Tool
+    -------------------  ------------------------------------------------
+    X11                  xkb-switch
+    Wayland — Hyprland   hyprctl
+    Wayland — niri       niri
+    Wayland — sway       swaymsg
+    Wayland — mango      mmsg
+    Wayland — GNOME      gdbus
+
+Run |:checkhealth| lvim-linguistics to verify the tools (see
+|lvim-linguistics-health|).
+
+==============================================================================
+3. SETUP                                          *lvim-linguistics-setup*
+>lua
+  require("lvim-linguistics").setup({
+      plugin_config = {
+          -- string prefix ("xkb-switch -s ") or a function of the layout id;
+          -- auto-detected from the session when omitted.
+          kbrd_cmd = "xkb-switch -s ",
+          spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+      },
+      base_config = {
+          mode_language = {
+              active = false,
+              file_types = { black_list = {}, white_list = {} },
+              normal_mode_language = "us",
+              insert_mode_language = "bg",
+              insert_mode_languages = { "bg", "de", "fr" },
+          },
+          spell = {
+              active = false,
+              file_types = { black_list = {}, white_list = {} },
+              language = "en",
+              languages = {
+                  en = { spelllang = "en", spellfile = "en.add" },
+              },
+          },
+      },
+  })
+<
+setup() merges user options into the live config in place (via
+lvim-utils.utils.merge — a clean array REPLACE, so a user `black_list`
+REPLACES the default rather than being appended), registers the highlight
+groups, loads the runtime state for the cwd, then installs the command and
+autocmds on the next tick.
+
+==============================================================================
+4. CONFIGURATION                                 *lvim-linguistics-config*
+
+plugin_config ~
+  kbrd_cmd            Keyboard-switch command. A string PREFIX to which the
+                      layout id is appended (`kbrd_cmd .. lang`), or a
+                      function `fun(lang):string` returning the full command
+                      (use this for index-based switchers like Hyprland).
+  spell_files_folder  Directory where .spl/.sug spell files live (downloaded
+                      automatically on first use).
+
+base_config.mode_language ~
+  active                 Whether insert-mode layout switching starts on.
+  file_types.black_list  Filetypes where switching NEVER runs.
+  file_types.white_list  If non-empty, switching runs ONLY in these filetypes.
+  normal_mode_language   Layout id restored on InsertLeave.
+  insert_mode_language   Layout id set on InsertEnter.
+  insert_mode_languages  Selectable insert-mode layouts (panel dropdown).
+
+base_config.spell ~
+  active                 Whether spell checking starts on.
+  file_types.black_list  Filetypes where 'spell' is NEVER set.
+  file_types.white_list  If non-empty, 'spell' is set ONLY in these filetypes.
+  language               Active language key (must exist in `languages`).
+  languages              Table of `key = { spelllang, spellfile }`.
+
+==============================================================================
+5. LOCAL PROJECT CONFIG                            *lvim-linguistics-local*
+
+When the cwd contains a `.lvim_linguistics.json`, it REPLACES base_config as
+the runtime profile for that directory; otherwise a deep copy of base_config
+is used. The file is reloaded on |DirChanged|. Save / delete it from the
+Config tab of the panel (see |lvim-linguistics-panel|).
+
+==============================================================================
+6. PANEL                                           *lvim-linguistics-panel*
+
+`:LvimLinguistics` opens a tabbed settings panel (built on the lvim-utils UI):
+
+  Spelling     toggle spelling; pick the active language.
+  Insert Mode  toggle insert-mode switching; pick the insert layout.
+  Config       save the current profile as a local `.lvim_linguistics.json`,
+               delete it, or show the cwd.
+
+Panel keys (defaults, configurable via config.ui popup_global.keys):
+
+  j / k        move down / up
+  h / l        previous / next tab
+  <Space>      toggle a bool / multiselect row
+  <CR>         confirm / run the focused row
+  <Esc> / q    close
+
+==============================================================================
+7. COMMAND                                            *:LvimLinguistics*
+
+  :LvimLinguistics                    Open the panel (first tab).
+  :LvimLinguistics spelling           Open the panel on the Spelling tab.
+  :LvimLinguistics insert-mode        Open the panel on the Insert Mode tab.
+  :LvimLinguistics config             Open the panel on the Config tab.
+  :LvimLinguistics toggle-spelling    Toggle spell checking on/off.
+  :LvimLinguistics toggle-insert-mode Toggle insert-mode switching on/off.
+
+==============================================================================
+8. SPELL FILES                                *lvim-linguistics-spellfiles*
+
+Dictionaries (`<lang>.utf-8.spl`) and, when Neovim raises |SpellFileMissing|,
+the matching `.sug`, are downloaded automatically (non-blocking) from
+https://ftp.nluug.nl/vim/runtime/spell/ into `spell_files_folder`. A
+notification appears when the file is ready.
+
+==============================================================================
+9. STATUSLINE                                *lvim-linguistics-statusline*
+
+Two providers, for a statusline component:
+>lua
+  local status = require("lvim-linguistics.status")
+  status.spell_has()   -- boolean: 'spell' on in the current window
+  status.spell_get()   -- "KEY (SPELLLANG)" (upper-cased) or nil
+<
+==============================================================================
+10. HIGHLIGHTS                              *lvim-linguistics-highlights*
+
+Built from the lvim-utils palette and rebuilt on colorscheme change:
+
+  LvimLinguisticsIcon          General icons (teal)
+  LvimLinguisticsSpellActive   Active spell indicator (green)
+  LvimLinguisticsSpellLang     Language name (blue)
+  LvimLinguisticsSpellSep      Separator (blended blue)
+  LvimLinguisticsLangActive    Active insert-mode language (purple, bold)
+  LvimLinguisticsLangNormal    Normal-mode language (teal)
+  LvimLinguisticsLangInsert    Insert-mode language (yellow)
+
+Override any group with `vim.api.nvim_set_hl(0, "<Group>", { ... })`.
+
+==============================================================================
+11. HEALTH                                       *lvim-linguistics-health*
+
+  :checkhealth lvim-linguistics
+
+Checks the Neovim version, lvim-utils, the keyboard-switch tool, the
+spell-file folder, curl, and the loaded runtime state.
+
+vim:tw=78:ts=8:noet:ft=help:norl:

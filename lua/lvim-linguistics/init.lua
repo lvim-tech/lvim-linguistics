@@ -1,19 +1,45 @@
+-- lvim-linguistics: public entry point (setup + the two long-lived autocmds).
+-- setup() merges user options into the live config (via lvim-utils.utils.merge — clean
+-- array REPLACE), registers the LvimLinguistics* highlight groups through lvim-utils so
+-- they survive colorscheme changes, loads the per-cwd runtime state, then defers command
+-- registration and the first activation pass by a tick so a project-local config is picked
+-- up after the cwd is settled. SpellFileMissing downloads a missing .spl/.sug on demand;
+-- DirChanged reloads the runtime state (and re-applies) when the cwd changes.
+--
+---@module "lvim-linguistics"
+
 local config = require("lvim-linguistics.config")
-local utils = require("lvim-linguistics.utils")
 local funcs = require("lvim-linguistics.funcs")
 local commands = require("lvim-linguistics.commands")
+
+-- lvim-utils is a hard dependency (palette + merge); pcall so a missing install degrades
+-- gracefully to Neovim's tbl_deep_extend instead of erroring at load.
+local ok_utils, utils_lib = pcall(require, "lvim-utils.utils")
+
+---@type integer  augroup for the SpellFileMissing downloader
 local group_spell_file_missing = vim.api.nvim_create_augroup("LvimLinguisticsSpellFileMissing", {
     clear = true,
 })
+---@type integer  augroup for the DirChanged reload
 local group_change_directory = vim.api.nvim_create_augroup("LvimLinguisticsChangeDirectory", {
     clear = true,
 })
 
+local hl_mod = require("lvim-linguistics.config.highlights")
+
 local M = {}
 
+--- Configure and start the plugin (idempotent). Merges `user_config` into the live config,
+--- registers highlights, loads the per-cwd runtime state and installs the autocmds/command.
+---@param user_config? LvimLinguisticsConfig  User overrides (see config.lua)
+---@return nil
 M.setup = function(user_config)
     if user_config ~= nil then
-        utils.merge(config, user_config)
+        if ok_utils and utils_lib.merge then
+            utils_lib.merge(config, user_config)
+        else
+            config = vim.tbl_deep_extend("force", config, user_config)
+        end
     end
 
     local ok, hl = pcall(require, "lvim-utils.highlight")
@@ -25,7 +51,6 @@ M.setup = function(user_config)
             hl.register(utils_cfg.colors)
         end
 
-        local hl_mod = require("lvim-linguistics.config.highlights")
         hl.register(hl_mod.build(), hl_mod.force)
 
         -- Install the ColorScheme autocmd so all registered groups survive a
@@ -51,6 +76,9 @@ M.setup = function(user_config)
     end, 10)
 end
 
+--- Install the SpellFileMissing autocmd: when Neovim asks for a spell file that isn't on
+--- disk, download its .spl and .sug from the Vim FTP mirror into spell_files_folder (async).
+---@return nil
 M.spell_file_missing = function()
     vim.api.nvim_create_autocmd("SpellFileMissing", {
         callback = function()
@@ -91,6 +119,9 @@ M.spell_file_missing = function()
     })
 end
 
+--- Install the DirChanged autocmd: reload the runtime state (picking up a project-local
+--- .lvim_linguistics.json) and re-apply the active features whenever the global cwd changes.
+---@return nil
 M.change_directory = function()
     vim.api.nvim_create_autocmd("DirChanged", {
         pattern = "global",

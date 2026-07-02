@@ -1,14 +1,22 @@
--- lvim-linguistics: shared lvim-utils UI instance.
--- Lazily created on first access so that lvim-utils is not required at load time.
+-- lvim-linguistics.ui: the settings panel (lvim-utils tabbed UI).
+-- Lazily creates ONE shared lvim-utils UI instance on first open (so lvim-utils is
+-- not required at load time) and builds three tabs — Spelling, Insert Mode, Config —
+-- from the live runtime state (state.config, NOT a global). Each row's `run` calls
+-- into funcs.* so toggling/selecting in the panel drives the real feature.
+--
+---@module "lvim-linguistics.ui"
 
 local funcs = require("lvim-linguistics.funcs")
 local utils = require("lvim-linguistics.utils")
+local state = require("lvim-linguistics.state")
+local cfg_ui = require("lvim-linguistics.config.ui")
 
+---@type table?  the shared lvim-utils UI instance (created once via .new())
 local _instance = nil
 
---- Returns the shared lvim-utils UI instance (created once via .new()).
---- Passes config/ui.lua popup_global so per-plugin overrides take effect.
---- Returns nil if lvim-utils is not available.
+--- Return the shared lvim-utils UI instance, creating it once with the config/ui.lua
+--- popup_global overrides. Returns nil when lvim-utils is not installed.
+---@return table? ui  The UI instance, or nil
 local function get()
     if _instance then
         return _instance
@@ -17,13 +25,15 @@ local function get()
     if not ok then
         return nil
     end
-    local cfg = require("lvim-linguistics.config.ui")
-    _instance = mod.new(cfg.popup_global)
+    _instance = mod.new(cfg_ui.popup_global)
     return _instance
 end
 
 local M = {}
 
+--- Open the settings panel, optionally focused on a given tab.
+---@param tab_selector? integer  1 = Spelling, 2 = Insert Mode, 3 = Config (default: first tab)
+---@return nil
 M.open = function(tab_selector)
     local ui = get()
     if not ui then
@@ -31,13 +41,12 @@ M.open = function(tab_selector)
         return
     end
 
-    local cfg = _G.LVIM_LINGUISTICS
+    local cfg = state.config
     if type(cfg) ~= "table" then
         vim.notify("Plugin not initialized", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
         return
     end
 
-    local cfg_ui = require("lvim-linguistics.config.ui")
     local menus = cfg_ui.menus.main
 
     -- ── Spelling tab ──────────────────────────────────────────────────────────

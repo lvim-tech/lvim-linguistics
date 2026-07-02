@@ -23,30 +23,30 @@ Keyboard switching depends on your display server. The plugin auto-detects the s
 
 > You can always override `kbrd_cmd` manually — see configuration below.
 
-## Setup
+## Installation
+
+Requires Neovim >= 0.10 and [lvim-utils](https://github.com/lvim-tech/lvim-utils).
+
+### lvim-installer (recommended)
+
+Install and manage it from the LVIM package manager — open the **Plugins** tab and install / update / pin it:
+
+```vim
+:LvimInstaller plugins
+```
+
+lvim-installer installs plugins through Neovim's built-in `vim.pack`, so no external plugin manager is needed.
 
 ### lazy.nvim
 
 ```lua
-{
+return {
     "lvim-tech/lvim-linguistics",
     dependencies = { "lvim-tech/lvim-utils" },
     config = function()
-        require("lvim-linguistics").setup({ ... })
+        require("lvim-linguistics").setup({})
     end,
 }
-```
-
-### Native (vim.pack / packadd)
-
-```lua
--- In your init.lua, after the plugin is on the runtimepath:
-vim.pack.add({
-    { src = "https://github.com/lvim-tech/lvim-utils" },
-    { src = "https://github.com/lvim-tech/lvim-linguistics" },
-})
-
-require("lvim-linguistics").setup({ ... })
 ```
 
 ### packer.nvim
@@ -56,9 +56,19 @@ use({
     "lvim-tech/lvim-linguistics",
     requires = { "lvim-tech/lvim-utils" },
     config = function()
-        require("lvim-linguistics").setup({ ... })
+        require("lvim-linguistics").setup({})
     end,
 })
+```
+
+### Native (vim.pack)
+
+```lua
+vim.pack.add({
+    { src = "https://github.com/lvim-tech/lvim-utils" },
+    { src = "https://github.com/lvim-tech/lvim-linguistics" },
+})
+require("lvim-linguistics").setup({})
 ```
 
 ## Configuration
@@ -81,7 +91,7 @@ plugin_config = {
     -- Folder where spell files (.spl) are stored.
     -- Files are downloaded automatically on first use (async, no blocking).
     spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
-},
+}
 ```
 
 ### base_config
@@ -145,16 +155,16 @@ require("lvim-linguistics").setup({
 })
 ```
 
-> For Hyprland / mango (index-based layout switching), use a function for `kbrd_cmd`:
->
-> ```lua
-> plugin_config = {
->     kbrd_cmd = function(lang)
->         local idx = { en = 0, bg = 1 }
->         return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
->     end,
-> },
-> ```
+For Hyprland / mango (index-based layout switching), use a function for `kbrd_cmd`:
+
+```lua
+plugin_config = {
+    kbrd_cmd = function(lang)
+        local idx = { en = 0, bg = 1 }
+        return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
+    end,
+}
+```
 
 ## Commands
 
@@ -190,6 +200,26 @@ vim.keymap.set(
     { noremap = true, silent = true, desc = "Toggle insert mode language" }
 )
 ```
+
+## Screenshots
+
+Insert-mode keyboard language:
+
+![Insert mode status](./media/01.LvimLinguisticsMENUInsertModeStatus.png)
+![Insert mode language](./media/02.LvimLinguisticsMENUInsertModeLanguage.png)
+![Toggle insert mode](./media/03.LvimLinguisticsTOGGLEInsertModeLanguage.png)
+
+Spelling:
+
+![Spelling status](./media/04.LvimLinguisticsMENUSpellingStatus.png)
+![Spell languages](./media/05.LvimLinguisticsMENUSpellLanguages.png)
+![Toggle spelling](./media/06.LvimLinguisticsTOGGLESpelling.png)
+
+Per-project local config:
+
+![Save current config as local](./media/07.LvimLinguisticsMENUSaveCurrentConfigAsLocal.png)
+![Local config file](./media/07.LvimLinguisticsLocalConfigFile.png)
+![Delete local config](./media/09.LvimLinguisticsMENUDeleteLocalConfig.png)
 
 ## Spell files
 

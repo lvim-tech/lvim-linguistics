@@ -1,27 +1,40 @@
+-- lvim-linguistics.commands: the :LvimLinguistics user command.
+-- One command with subcommands that either open the settings panel on a given tab
+-- or toggle a feature directly; <Tab> completion lists the subcommands.
+--
+---@module "lvim-linguistics.commands"
+
+local ui = require("lvim-linguistics.ui")
+local funcs = require("lvim-linguistics.funcs")
+
 local M = {}
 
+---@type table<string, fun():nil>  subcommand name -> handler
 local subcommands = {
     ["spelling"] = function()
-        require("lvim-linguistics.ui").open(1)
+        ui.open(1)
     end,
     ["insert-mode"] = function()
-        require("lvim-linguistics.ui").open(2)
+        ui.open(2)
     end,
     ["config"] = function()
-        require("lvim-linguistics.ui").open(3)
+        ui.open(3)
     end,
     ["toggle-spelling"] = function()
-        require("lvim-linguistics.funcs").toggle_spelling()
+        funcs.toggle_spelling()
     end,
     ["toggle-insert-mode"] = function()
-        require("lvim-linguistics.funcs").toggle_insert_mode_language()
+        funcs.toggle_insert_mode_language()
     end,
 }
 
+--- Register the :LvimLinguistics user command (idempotent). With no argument it opens
+--- the panel on its first tab; otherwise it dispatches the matching subcommand.
+---@return nil
 M.init_commands = function()
     vim.api.nvim_create_user_command("LvimLinguistics", function(opts)
         if opts.args == "" then
-            require("lvim-linguistics.ui").open()
+            ui.open()
             return
         end
         local fn = subcommands[opts.args]

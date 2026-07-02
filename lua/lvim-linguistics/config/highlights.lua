@@ -1,12 +1,16 @@
--- lvim-linguistics: highlight group definitions.
+-- lvim-linguistics.config.highlights: highlight group definitions.
 -- All colors come from lvim-utils.colors so the palette is shared across plugins.
--- Registered via lvim-utils.highlight — survive colorscheme changes.
+-- Registered via lvim-utils.highlight — they survive colorscheme changes. build()
+-- is a function (not a static table) so each call reads the CURRENT palette values
+-- and the groups can be rebuilt on a palette change.
 --
--- build() must be a function so each call reads the current palette values.
+---@module "lvim-linguistics.config.highlights"
 
 local c = require("lvim-utils.colors")
 local hl = require("lvim-utils.highlight")
 
+--- Build the LvimLinguistics* highlight-group table from the current palette.
+---@return table<string, vim.api.keyset.highlight>  group name -> highlight spec
 local function build()
     return {
         -- ── General ───────────────────────────────────────────────────────────
