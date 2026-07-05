@@ -1,5 +1,5 @@
 -- lvim-linguistics.health: :checkhealth lvim-linguistics
--- Reports the Neovim version, the lvim-utils dependency, the keyboard-switch tool for
+-- Reports the Neovim version, the lvim-utils + lvim-ui dependencies, the keyboard-switch tool for
 -- the current session, the spell-file folder + curl (used to download dictionaries),
 -- and the loaded runtime state.
 --
@@ -28,7 +28,14 @@ function M.check()
     if ok_utils and ok_colors and type(colors.blend) == "function" then
         health.ok("lvim-utils found (palette + merge)")
     else
-        health.warn("lvim-utils not found — highlights and the settings panel are unavailable")
+        health.warn("lvim-utils not found — highlights are unavailable")
+    end
+
+    -- lvim-ui — the settings panel's tabbed UI (new/tabs). Absent → :LvimLinguistics panel can't open.
+    if pcall(require, "lvim-ui") then
+        health.ok("lvim-ui found (settings panel)")
+    else
+        health.warn("lvim-ui not found — the settings panel is unavailable")
     end
 
     -- Keyboard-layout switch tool for the current session.

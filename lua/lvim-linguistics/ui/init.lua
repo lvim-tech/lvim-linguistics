@@ -1,5 +1,5 @@
--- lvim-linguistics.ui: the settings panel (lvim-utils tabbed UI).
--- Lazily creates ONE shared lvim-utils UI instance on first open (so lvim-utils is
+-- lvim-linguistics.ui: the settings panel (lvim-ui tabbed UI).
+-- Lazily creates ONE shared lvim-ui UI instance on first open (so lvim-ui is
 -- not required at load time) and builds three tabs — Spelling, Insert Mode, Config —
 -- from the live runtime state (state.config, NOT a global). Each row's `run` calls
 -- into funcs.* so toggling/selecting in the panel drives the real feature.
@@ -11,17 +11,17 @@ local utils = require("lvim-linguistics.utils")
 local state = require("lvim-linguistics.state")
 local cfg_ui = require("lvim-linguistics.config.ui")
 
----@type table?  the shared lvim-utils UI instance (created once via .new())
+---@type table?  the shared lvim-ui UI instance (created once via .new())
 local _instance = nil
 
---- Return the shared lvim-utils UI instance, creating it once with the config/ui.lua
---- popup_global overrides. Returns nil when lvim-utils is not installed.
+--- Return the shared lvim-ui UI instance, creating it once with the config/ui.lua
+--- popup_global overrides. Returns nil when lvim-ui is not installed.
 ---@return table? ui  The UI instance, or nil
 local function get()
     if _instance then
         return _instance
     end
-    local ok, mod = pcall(require, "lvim-utils.ui")
+    local ok, mod = pcall(require, "lvim-ui")
     if not ok then
         return nil
     end
@@ -37,7 +37,7 @@ local M = {}
 M.open = function(tab_selector)
     local ui = get()
     if not ui then
-        vim.notify("lvim-utils not available", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+        vim.notify("lvim-ui not available", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
         return
     end
 
@@ -151,11 +151,13 @@ M.open = function(tab_selector)
 
     ui.tabs({
         title = menus.title,
+        title_pos = "center", -- centred title band, like the control center
         tab_selector = tab_selector,
         -- MENU mode: a tab's childless action rows (the config tab's Save / Delete) stay a selectable BODY list
         -- instead of collapsing into footer buttons — which `footer_hints` (the legend) would otherwise replace.
         menu = true,
-        width = cfg_ui.popup_global.width,
+        -- No explicit width: the panel follows the shared lvim-ui geometry (config.ui.size), so every band is
+        -- the same width (no short title/tab band).
         footer_hints = true, -- bottom key-hint legend (panel keys • focused-row keys), like the control center
         tabs = {
             { label = menus.tabs.spelling.label, icon = menus.tabs.spelling.icon, rows = spell_rows },
