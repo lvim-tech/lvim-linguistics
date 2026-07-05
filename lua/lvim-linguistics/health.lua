@@ -1,5 +1,5 @@
 -- lvim-linguistics.health: :checkhealth lvim-linguistics
--- Reports the Neovim version, the lvim-utils + lvim-ui dependencies, the keyboard-switch tool for
+-- Reports the Neovim version, the lvim-utils + lvim-control-center dependencies, the keyboard-switch tool for
 -- the current session, the spell-file folder + curl (used to download dictionaries),
 -- and the loaded runtime state.
 --
@@ -31,11 +31,19 @@ function M.check()
         health.warn("lvim-utils not found — highlights are unavailable")
     end
 
-    -- lvim-ui — the settings panel's tabbed UI (new/tabs). Absent → :LvimLinguistics panel can't open.
-    if pcall(require, "lvim-ui") then
-        health.ok("lvim-ui found (settings panel)")
+    -- lvim-control-center hosts the settings panel (its own instance + database for the global
+    -- default). Absent → :LvimLinguistics panel can't open (spelling/insert-mode still work).
+    local p = config.settings_panel or {}
+    if pcall(require, "lvim-control-center") then
+        local cc = require("lvim-control-center")
+        local inst = cc.get(p.command or "LvimLinguisticsConfig")
+        if inst and inst.db and inst.db:is_open() then
+            health.ok(("settings panel database open (%s, :%s)"):format(inst.config.save, inst.config.command))
+        else
+            health.info("lvim-control-center found — the settings panel opens on first use")
+        end
     else
-        health.warn("lvim-ui not found — the settings panel is unavailable")
+        health.error("lvim-control-center not found — :LvimLinguistics panel (settings) is unavailable")
     end
 
     -- Keyboard-layout switch tool for the current session.

@@ -12,6 +12,7 @@
 local config = require("lvim-linguistics.config")
 local utils = require("lvim-linguistics.utils")
 local state = require("lvim-linguistics.state")
+local store = require("lvim-linguistics.store")
 
 ---@type integer  augroup for the InsertEnter/InsertLeave layout switch
 local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", { clear = true })
@@ -46,16 +47,42 @@ M.check_dir = function()
     end
 end
 
---- Load the runtime state for the current cwd: a project-local .lvim_linguistics.json when
---- present, otherwise a deep copy of config.base_config. Stored in state.config.
+--- Load the runtime state for the current cwd, in three layers (later wins):
+---   1. `config.base_config` — the defaults;
+---   2. the GLOBAL panel settings from the control-center database (via `store`), overlaid;
+---   3. a project-local `.lvim_linguistics.json`, which OVERRIDES entirely when present.
+--- Stored in state.config.
 ---@return nil
 M.get_config = function()
+    local cfg = vim.deepcopy(config.base_config)
+
+    -- Layer 2 — the global default from the panel's database (nil / unbound = left as base).
+    local function overlay(key, apply)
+        local v = store.load(key)
+        if v ~= nil then
+            apply(v)
+        end
+    end
+    overlay("spell_active", function(v)
+        cfg.spell.active = v == true
+    end)
+    overlay("spell_language", function(v)
+        cfg.spell.language = v
+    end)
+    overlay("mode_active", function(v)
+        cfg.mode_language.active = v == true
+    end)
+    overlay("insert_mode_language", function(v)
+        cfg.mode_language.insert_mode_language = v
+    end)
+
+    -- Layer 3 — a project-local override wins entirely (a whole-state snapshot).
     local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
     if local_config then
-        state.config = local_config
-    else
-        state.config = vim.deepcopy(config.base_config)
+        cfg = local_config
     end
+
+    state.config = cfg
 end
 
 --- Set the layout used in Insert mode (runtime state only; does not switch immediately).

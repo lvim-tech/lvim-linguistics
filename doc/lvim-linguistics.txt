@@ -141,12 +141,20 @@ Panel keys (defaults, configurable via config.ui popup_global.keys):
 ==============================================================================
 7. COMMAND                                            *:LvimLinguistics*
 
-  :LvimLinguistics                    Open the panel (first tab).
-  :LvimLinguistics spelling           Open the panel on the Spelling tab.
-  :LvimLinguistics insert-mode        Open the panel on the Insert Mode tab.
-  :LvimLinguistics config             Open the panel on the Config tab.
-  :LvimLinguistics toggle-spelling    Toggle spell checking on/off.
-  :LvimLinguistics toggle-insert-mode Toggle insert-mode switching on/off.
+The command is owned by lvim-control-center (which hosts the panel), so it carries the full
+control-center command plus the plugin's quick toggles:
+
+  :LvimLinguistics                    Open the settings panel.
+  :LvimLinguistics Spelling           Open the panel on the Spelling tab (by name).
+  :LvimLinguistics {Insert Mode|Config}  Open on that tab.
+  :LvimLinguistics toggle-spelling    Toggle spell checking on/off (no panel).
+  :LvimLinguistics toggle-insert-mode Toggle insert-mode switching on/off (no panel).
+  :LvimLinguistics {export|import|reset}  Export / import / reset the global settings.
+  :LvimLinguistics search             Fuzzy-search every setting across the tabs.
+  :LvimLinguistics preset {save|load|list|delete} {name}  Named settings profiles.
+
+The panel's settings are the GLOBAL default (in the panel's own database); a project-local
+`.lvim_linguistics.json` (Config tab -> Save as local config) overrides them per directory.
 
 ==============================================================================
 8. SPELL FILES                                *lvim-linguistics-spellfiles*

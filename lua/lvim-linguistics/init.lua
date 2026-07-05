@@ -1,16 +1,16 @@
 -- lvim-linguistics: public entry point (setup + the two long-lived autocmds).
 -- setup() merges user options into the live config (via lvim-utils.utils.merge — clean
 -- array REPLACE), registers the LvimLinguistics* highlight groups through lvim-utils so
--- they survive colorscheme changes, loads the per-cwd runtime state, then defers command
--- registration and the first activation pass by a tick so a project-local config is picked
--- up after the cwd is settled. SpellFileMissing downloads a missing .spl/.sug on demand;
--- DirChanged reloads the runtime state (and re-applies) when the cwd changes.
+-- they survive colorscheme changes, creates the settings panel's lvim-control-center instance
+-- (which owns the `:LvimLinguistics` command), loads the per-cwd runtime state, then defers the
+-- first activation pass by a tick so a project-local config is picked up after the cwd is
+-- settled. SpellFileMissing downloads a missing .spl/.sug on demand; DirChanged reloads the
+-- runtime state (and re-applies) when the cwd changes.
 --
 ---@module "lvim-linguistics"
 
 local config = require("lvim-linguistics.config")
 local funcs = require("lvim-linguistics.funcs")
-local commands = require("lvim-linguistics.commands")
 
 -- lvim-utils is a hard dependency (palette + merge); pcall so a missing install degrades
 -- gracefully to Neovim's tbl_deep_extend instead of erroring at load.
@@ -67,10 +67,14 @@ M.setup = function(user_config)
     end
 
     funcs.check_dir()
+    -- Create the settings panel's dedicated control-center instance (own command + own database)
+    -- and bind the global store to it BEFORE get_config, so the global layer is read on load.
+    pcall(function()
+        require("lvim-linguistics.panel").setup()
+    end)
     funcs.get_config()
     M.spell_file_missing()
     vim.defer_fn(function()
-        commands.init_commands()
         funcs.process()
         M.change_directory()
     end, 10)

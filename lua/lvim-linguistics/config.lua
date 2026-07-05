@@ -106,12 +106,22 @@ end
 ---@class LvimLinguisticsConfig
 ---@field plugin_config LvimLinguisticsPluginConfig  Host/session wiring
 ---@field base_config   LvimLinguisticsBaseConfig    Default spelling / insert-mode profile
+---@field settings_panel { command?: string, save?: string }  The settings panel, hosted by lvim-control-center: `command` = the user command that opens it, `save` = its OWN database directory
 
 ---@type LvimLinguisticsConfig
 local M = {
     plugin_config = {
         kbrd_cmd = detect_kbrd_cmd(),
         spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+    },
+    -- The settings panel is hosted by lvim-control-center (a required dependency) as its OWN
+    -- instance with its OWN database — for the GLOBAL default. control-center REGISTERS the
+    -- command (the plugin no longer makes one), so `:LvimLinguistics` is the panel command +
+    -- the quick toggles (subcommands). A project-local `.lvim_linguistics.json` (Config tab →
+    -- Save as local config) overrides the global per directory.
+    settings_panel = {
+        command = "LvimLinguistics", -- the user command that opens the panel (owned by control-center)
+        save = nil, -- database directory; nil → stdpath("data")/lvim-linguistics
     },
     base_config = {
         mode_language = {

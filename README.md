@@ -174,14 +174,22 @@ All functionality is exposed through a single command with subcommands:
 :LvimLinguistics [subcommand]
 ```
 
-| Subcommand           | Description                                  |
-| -------------------- | -------------------------------------------- |
-| _(none)_             | Open the main UI panel                       |
-| `spelling`           | Open the UI on the Spelling tab              |
-| `insert-mode`        | Open the UI on the Insert Mode tab           |
-| `config`             | Open the UI on the Config tab                |
-| `toggle-spelling`    | Toggle spell checking on/off                 |
-| `toggle-insert-mode` | Toggle insert-mode language switching on/off |
+The command is owned by **lvim-control-center** (which hosts the panel), so besides opening
+it, it carries the full control-center command — plus the plugin's quick toggles:
+
+| Subcommand           | Description                                                     |
+| -------------------- | -------------------------------------------------------------- |
+| _(none)_             | Open the settings panel                                        |
+| `Spelling` / `Insert Mode` / `Config` | Open the panel focused on that tab (by name)  |
+| `toggle-spelling`    | Toggle spell checking on/off (no panel)                        |
+| `toggle-insert-mode` | Toggle insert-mode language switching on/off (no panel)        |
+| `export` / `import` / `reset` | Export / import / reset the global settings           |
+| `search`             | Fuzzy-search every setting across the tabs                     |
+| `preset save\|load\|list\|delete <name>` | Named global-settings profiles             |
+
+The panel's settings are the **global default** (stored in the panel's own database); a
+project-local `.lvim_linguistics.json` (Config tab → _Save as local config_) overrides them
+per directory.
 
 ### Keymaps example
 
