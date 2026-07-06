@@ -14,12 +14,15 @@ local utils = require("lvim-linguistics.utils")
 local state = require("lvim-linguistics.state")
 local store = require("lvim-linguistics.store")
 
+-- lvim-utils.merge layers a table over another IN PLACE with clean array REPLACE (an
+-- override list is the list, not an index-merge). pcall so a missing lvim-utils degrades
+-- gracefully to vim.tbl_deep_extend, matching init.lua's dependency handling.
+local ok_utils, utils_lib = pcall(require, "lvim-utils.utils")
+
 ---@type integer  augroup for the InsertEnter/InsertLeave layout switch
 local group_change_mode = vim.api.nvim_create_augroup("LvimLinguisticsChangeMode", { clear = true })
 ---@type integer  augroup for the WinEnter/BufEnter spell-enable
 local group_spell_enabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellEnabled", { clear = true })
----@type integer  augroup for the WinEnter spell-disable
-local group_spell_disabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellDisabled", { clear = true })
 
 local M = {}
 
@@ -76,10 +79,15 @@ M.get_config = function()
         cfg.mode_language.insert_mode_language = v
     end)
 
-    -- Layer 3 — a project-local override wins entirely (a whole-state snapshot).
+    -- Layer 3 — a project-local override, layered over cfg so a partial file only carries its
+    -- overrides (missing keys fall back to the defaults) with clean array REPLACE semantics.
     local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
     if local_config then
-        cfg = vim.tbl_deep_extend("force", cfg, local_config)
+        if ok_utils and utils_lib.merge then
+            cfg = utils_lib.merge(cfg, local_config)
+        else
+            cfg = vim.tbl_deep_extend("force", cfg, local_config)
+        end
     end
 
     state.config = cfg
@@ -205,7 +213,6 @@ end
 ---@return boolean ok
 M.enable_spelling = function()
     vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
-    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
     local spell_cfg = state.config.spell
     local lang_key = spell_cfg.language
     if not lang_key or type(lang_key) ~= "string" then
@@ -245,12 +252,12 @@ M.enable_spelling = function()
     return true
 end
 
---- Disable spell checking: 'setlocal nospell' now and on subsequent WinEnter, clear the
---- enable autocmds, and flip the state flag.
+--- Disable spell checking: clear the enable autocmds, set 'nospell' once on every open
+--- window (nothing re-applies), and flip the state flag — so a later manual `:setlocal
+--- spell` is not fought.
 ---@return nil
 M.disable_spelling = function()
     vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
-    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
     for _, win in ipairs(vim.api.nvim_list_wins()) do
         pcall(vim.api.nvim_set_option_value, "spell", false, { win = win })
     end
