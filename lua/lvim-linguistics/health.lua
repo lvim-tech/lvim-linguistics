@@ -36,7 +36,7 @@ function M.check()
     local p = config.settings_panel or {}
     if pcall(require, "lvim-control-center") then
         local cc = require("lvim-control-center")
-        local inst = cc.get(p.command or "LvimLinguisticsConfig")
+        local inst = cc.get(p.command or "LvimLinguistics")
         if inst and inst.db and inst.db:is_open() then
             health.ok(("settings panel database open (%s, :%s)"):format(inst.config.save, inst.config.command))
         else

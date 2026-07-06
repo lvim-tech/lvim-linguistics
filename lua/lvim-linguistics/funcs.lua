@@ -79,7 +79,7 @@ M.get_config = function()
     -- Layer 3 — a project-local override wins entirely (a whole-state snapshot).
     local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
     if local_config then
-        cfg = local_config
+        cfg = vim.tbl_deep_extend("force", cfg, local_config)
     end
 
     state.config = cfg
@@ -96,6 +96,7 @@ end
 --- the OS keyboard layout via plugin_config.kbrd_cmd, gated by the filetype allow-list.
 ---@return nil
 M.enable_insert_mode_language = function()
+    vim.api.nvim_clear_autocmds({ group = group_change_mode })
     local cfg = state.config.mode_language
     if type(cfg.normal_mode_language) ~= "string" or type(cfg.insert_mode_language) ~= "string" then
         vim.notify("Invalid insert/normal mode language definitions", vim.log.levels.ERROR, {
@@ -116,12 +117,13 @@ M.enable_insert_mode_language = function()
             else
                 full_cmd = cmd .. lang
             end
-            os.execute(full_cmd .. " > /dev/null 2>&1")
+            vim.fn.jobstart(full_cmd)
         end)
     end
     vim.api.nvim_create_autocmd("InsertEnter", {
         pattern = "*",
         callback = function()
+            cfg = state.config.mode_language
             if is_ft_allowed(cfg.file_types, vim.bo.filetype) then
                 set_kbrd(cfg.insert_mode_language)
             end
@@ -131,6 +133,7 @@ M.enable_insert_mode_language = function()
     vim.api.nvim_create_autocmd("InsertLeave", {
         pattern = "*",
         callback = function()
+            cfg = state.config.mode_language
             if is_ft_allowed(cfg.file_types, vim.bo.filetype) then
                 set_kbrd(cfg.normal_mode_language)
             end
@@ -199,58 +202,58 @@ end
 
 --- Enable spell checking for the active language: download its dictionary if needed, then
 --- 'setlocal spell' on every allowed buffer via WinEnter/BufEnter.
----@return nil
+---@return boolean ok
 M.enable_spelling = function()
+    vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
+    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
     local spell_cfg = state.config.spell
     local lang_key = spell_cfg.language
     if not lang_key or type(lang_key) ~= "string" then
         vim.notify("Not defined language(s)", vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
-        return
+        return false
     end
     local lang_info = spell_cfg.languages[lang_key]
     if not lang_info then
         vim.notify("Not defined settings for: " .. lang_key, vim.log.levels.ERROR)
-        return
+        return false
     end
     local spelllang = lang_info.spelllang
     local spellfile = lang_info.spellfile or "global.add"
     if not spelllang then
         vim.notify("Invalid spelllang for: " .. lang_key, vim.log.levels.ERROR)
-        return
+        return false
     end
     local folder = config.plugin_config.spell_files_folder
     local dict_path = folder .. "/" .. spelllang .. ".utf-8.spl"
     --- Apply 'spell' to the current buffer if its filetype is allowed.
     ---@return nil
     local function spell()
+        spell_cfg = state.config.spell
         local ft = vim.bo.filetype
         if is_ft_allowed(spell_cfg.file_types, ft) then
             vim.cmd(string.format("setlocal spell spelllang=%s spellfile=%s/%s", spelllang, folder, spellfile))
-            spell_cfg.active = true
         end
     end
-    ensure_dictionary(spelllang, dict_path, spell)
-    vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
-    vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
-        callback = spell,
-        group = group_spell_enabled,
-    })
-    vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
+    spell_cfg.active = true
+    ensure_dictionary(spelllang, dict_path, function()
+        spell()
+        vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+            callback = spell,
+            group = group_spell_enabled,
+        })
+    end)
+    return true
 end
 
 --- Disable spell checking: 'setlocal nospell' now and on subsequent WinEnter, clear the
 --- enable autocmds, and flip the state flag.
 ---@return nil
 M.disable_spelling = function()
-    vim.cmd("setlocal nospell")
     vim.api.nvim_clear_autocmds({ group = group_spell_enabled })
     vim.api.nvim_clear_autocmds({ group = group_spell_disabled })
-    vim.api.nvim_create_autocmd("WinEnter", {
-        callback = function()
-            vim.cmd("setlocal nospell")
-        end,
-        group = group_spell_disabled,
-    })
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        pcall(vim.api.nvim_set_option_value, "spell", false, { win = win })
+    end
     state.config.spell.active = false
 end
 
@@ -261,8 +264,9 @@ M.toggle_spelling = function()
         M.disable_spelling()
         vim.notify("Spelling disabled", vim.log.levels.INFO)
     else
-        M.enable_spelling()
-        vim.notify("Spelling enabled: (" .. state.config.spell.language .. ")", vim.log.levels.INFO)
+        if M.enable_spelling() then
+            vim.notify("Spelling enabled: (" .. state.config.spell.language .. ")", vim.log.levels.INFO)
+        end
     end
 end
 
@@ -276,9 +280,13 @@ M.process = function()
     end
     if cfg.mode_language.active then
         M.enable_insert_mode_language()
+    else
+        M.disable_insert_mode_language()
     end
     if cfg.spell.active then
         M.enable_spelling()
+    else
+        M.disable_spelling()
     end
 end
 

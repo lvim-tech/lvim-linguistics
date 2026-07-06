@@ -38,7 +38,9 @@ M.setup = function(user_config)
         if ok_utils and utils_lib.merge then
             utils_lib.merge(config, user_config)
         else
-            config = vim.tbl_deep_extend("force", config, user_config)
+            for k, v in pairs(vim.tbl_deep_extend("force", config, user_config)) do
+                config[k] = v
+            end
         end
     end
 

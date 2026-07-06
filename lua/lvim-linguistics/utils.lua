@@ -30,22 +30,38 @@ M.read_file = function(file)
     if not ok or type(content) ~= "table" or next(content) == nil then
         return nil
     end
-    return vim.fn.json_decode(content)
+    local ok_decode, decoded = pcall(vim.json.decode, table.concat(content, "\n"))
+    if not ok_decode or type(decoded) ~= "table" then
+        vim.notify("Invalid lvim-linguistics config: " .. file, vim.log.levels.WARN, { title = "LVIM LINGUISTICS" })
+        return nil
+    end
+    return decoded
 end
 
 --- Write `content` to `file`. A table is JSON-encoded first; a string is written as-is.
---- Silently no-ops if the file cannot be opened for writing.
 ---@param file string        Absolute destination path
 ---@param content string|table  Payload (table is JSON-encoded)
 ---@return nil
 M.write_file = function(file, content)
-    local f = io.open(file, "w")
-    if f ~= nil then
-        if type(content) == "table" then
-            content = vim.fn.json_encode(content)
-        end
-        f:write(content)
-        f:close()
+    if type(content) == "table" then
+        content = vim.json.encode(content)
+    end
+    local tmp = file .. ".tmp"
+    local f = io.open(tmp, "w")
+    if f == nil then
+        vim.notify("Cannot write " .. tmp, vim.log.levels.ERROR, { title = "LVIM LINGUISTICS" })
+        return
+    end
+    f:write(content)
+    f:close()
+    local ok, err = os.rename(tmp, file)
+    if not ok then
+        os.remove(tmp)
+        vim.notify(
+            "Cannot replace " .. file .. ": " .. tostring(err),
+            vim.log.levels.ERROR,
+            { title = "LVIM LINGUISTICS" }
+        )
     end
 end
 
@@ -67,7 +83,7 @@ end
 ---@param name string  Absolute path to test
 ---@return boolean     True if the path exists
 M.exists = function(name)
-    return (vim.uv or vim.loop).fs_stat(name) ~= nil
+    return vim.uv.fs_stat(name) ~= nil
 end
 
 return M
