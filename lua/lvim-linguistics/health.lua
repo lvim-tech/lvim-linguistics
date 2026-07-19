@@ -48,6 +48,13 @@ function M.check()
 
     -- Keyboard-layout switch tool for the current session.
     local cmd = config.plugin_config.kbrd_cmd
+    local desktop = ((os.getenv("XDG_CURRENT_DESKTOP") or "") .. " " .. (os.getenv("DESKTOP_SESSION") or "")):lower()
+    if desktop:find("gnome") then
+        health.warn(
+            "GNOME session: layout switching goes through org.gnome.Shell.Eval, which GNOME Shell >= 41 "
+                .. "disables by default — enable it (or set a custom kbrd_cmd) if insert-mode switching does nothing"
+        )
+    end
     if type(cmd) == "function" then
         health.info("kbrd_cmd is a function (custom layout switching)")
     else

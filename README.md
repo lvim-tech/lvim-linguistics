@@ -90,7 +90,7 @@ plugin_config = {
 
     -- Folder where spell files (.spl) are stored.
     -- Files are downloaded automatically on first use (async, no blocking).
-    spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+    spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
 }
 ```
 

@@ -44,10 +44,10 @@ local shared_blacklist = {
 
 --- Pick the keyboard-layout switch command for the current display server/desktop.
 --- X11 uses `xkb-switch`; Wayland dispatches per compositor (Hyprland/mango/niri/sway/
---- GNOME), falling back to `xkb-switch` when nothing matches. The returned string is a
---- PREFIX to which the layout id is appended (`kbrd_cmd .. lang`) unless overridden with a
---- function in plugin_config.kbrd_cmd.
----@return string cmd  The switch-command prefix
+--- GNOME), falling back to `xkb-switch` when nothing matches. Most cases return a PREFIX to
+--- which the layout id is appended (`kbrd_cmd .. lang`); GNOME returns a FUNCTION instead,
+--- because the id must land inside the Eval JS rather than after the command.
+---@return string|fun(lang:string):string cmd  The switch-command prefix, or a function of the layout id
 local function detect_kbrd_cmd()
     local is_wayland = (os.getenv("WAYLAND_DISPLAY") or "") ~= "" or os.getenv("XDG_SESSION_TYPE") == "wayland"
 
@@ -67,8 +67,19 @@ local function detect_kbrd_cmd()
     elseif desktop:find("sway") or session:find("sway") then
         return "swaymsg input type:keyboard xkb_switch_layout "
     elseif desktop:find("gnome") or session:find("gnome") then
-        return "gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.gnome.Shell.Eval "
-            .. "'imports.ui.status.keyboard.getInputSourceManager().inputSources.filter(s=>s.id==\"%s\")[0]?.activate()' > /dev/null 2>&1 && true #"
+        -- GNOME needs the layout id INSIDE the Eval JS, not appended after the command. Return a
+        -- function (the config supports fun(lang):string) that formats the id into the source filter —
+        -- no "%s" placeholder that the plain `kbrd_cmd .. lang` concat could never substitute, and no
+        -- trailing `#` to swallow the appended arg (both were a kludge that made the switch a no-op).
+        -- (Note: GNOME Shell ≥ 41 disables Shell.Eval by default; :checkhealth warns about that.)
+        return function(lang)
+            return "gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell "
+                .. "--method org.gnome.Shell.Eval "
+                .. ("'imports.ui.status.keyboard.getInputSourceManager().inputSources.filter(s=>s.id==%q)[0]?.activate()'"):format(
+                    lang
+                )
+                .. " > /dev/null 2>&1"
+        end
     else
         return "xkb-switch -s "
     end
@@ -112,7 +123,9 @@ end
 local M = {
     plugin_config = {
         kbrd_cmd = detect_kbrd_cmd(),
-        spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+        -- No trailing slash: every consumer concatenates `folder .. "/" .. name`, so a trailing slash
+        -- here produced a double slash (".../spell//en.utf-8.spl") in every path and notify.
+        spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
     },
     -- The settings panel is hosted by lvim-control-center (a required dependency) as its OWN
     -- instance with its OWN database — for the GLOBAL default. control-center REGISTERS the

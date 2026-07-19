@@ -179,7 +179,9 @@ end
 ---@param target_path string    Absolute path the .spl should live at
 ---@param on_ready? fun():nil   Called once the dictionary is available
 ---@return nil
-local function ensure_dictionary(lang_code, target_path, on_ready)
+---@param on_fail? fun()  called (in addition to the notify) when the download fails, so a caller
+---                       chaining several languages can still settle instead of hanging forever
+local function ensure_dictionary(lang_code, target_path, on_ready, on_fail)
     if vim.fn.filereadable(target_path) == 1 then
         if on_ready then
             on_ready()
@@ -202,6 +204,9 @@ local function ensure_dictionary(lang_code, target_path, on_ready)
                         vim.log.levels.ERROR,
                         { title = "LVIM LINGUISTICS" }
                     )
+                    if on_fail then
+                        on_fail()
+                    end
                 end
             end)
         end,
@@ -231,24 +236,47 @@ M.enable_spelling = function()
         return false
     end
     local folder = config.plugin_config.spell_files_folder
-    local dict_path = folder .. "/" .. spelllang .. ".utf-8.spl"
+    -- 'spelllang' may be a comma list ("en,bg", explicitly documented): each language has its OWN
+    -- .spl file, so a single "en,bg.utf-8.spl" target never exists (the 404 meant on_ready never
+    -- ran and spell was never enabled). Split and ensure each language independently.
+    local langs = vim.split(spelllang, ",", { plain = true, trimempty = true })
+    if #langs == 0 then
+        langs = { spelllang }
+    end
     --- Apply 'spell' to the current buffer if its filetype is allowed.
     ---@return nil
     local function spell()
         spell_cfg = state.config.spell
         local ft = vim.bo.filetype
         if is_ft_allowed(spell_cfg.file_types, ft) then
-            vim.cmd(string.format("setlocal spell spelllang=%s spellfile=%s/%s", spelllang, folder, spellfile))
+            -- Set via the API, not :setlocal string interpolation, so a spellfile path with spaces
+            -- (or other :set-special characters) can't break the command. 'spelllang' takes the
+            -- comma list verbatim.
+            vim.opt_local.spell = true
+            vim.opt_local.spelllang = spelllang
+            vim.opt_local.spellfile = folder .. "/" .. spellfile
         end
     end
     spell_cfg.active = true
-    ensure_dictionary(spelllang, dict_path, function()
-        spell()
-        vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
-            callback = spell,
-            group = group_spell_enabled,
-        })
-    end)
+    -- Enable spell + install the autocmds once EVERY language has settled (already present,
+    -- downloaded, or failed). A failed language still settles (on_fail) so a partial comma list
+    -- never leaves the bootstrap hanging; Vim then reports any genuinely missing .spl at spell time.
+    local pending = #langs
+    local installed = false
+    local function settle()
+        pending = pending - 1
+        if pending <= 0 and not installed then
+            installed = true
+            spell()
+            vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+                callback = spell,
+                group = group_spell_enabled,
+            })
+        end
+    end
+    for _, lc in ipairs(langs) do
+        ensure_dictionary(lc, folder .. "/" .. lc .. ".utf-8.spl", settle, settle)
+    end
     return true
 end
 

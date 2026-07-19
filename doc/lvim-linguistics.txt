@@ -59,7 +59,7 @@ Run |:checkhealth| lvim-linguistics to verify the tools (see
           -- string prefix ("xkb-switch -s ") or a function of the layout id;
           -- auto-detected from the session when omitted.
           kbrd_cmd = "xkb-switch -s ",
-          spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell/",
+          spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
       },
       base_config = {
           mode_language = {
