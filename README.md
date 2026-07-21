@@ -2,7 +2,7 @@
 
 Lvim Linguistics controls spelling and keyboard language in insert mode — useful when
 writing documents in a foreign language. Supports per-project local config
-(`.lvim_linguistics.json` in the project root).
+(`.lvim/linguistics/config.json` in the project root).
 
 ![LVIM LINGUISTICS](./media/lvim-linguistics.png)
 
@@ -188,7 +188,7 @@ it, it carries the full control-center command — plus the plugin's quick toggl
 | `preset save\|load\|list\|delete <name>` | Named global-settings profiles             |
 
 The panel's settings are the **global default** (stored in the panel's own database); a
-project-local `.lvim_linguistics.json` (Config tab → _Save as local config_) overrides them
+project-local `.lvim/linguistics/config.json` (Config tab → _Save as local config_) overrides them
 per directory.
 
 ### Keymaps example

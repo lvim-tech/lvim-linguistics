@@ -4,7 +4,7 @@
 -- effective values. `plugin_config` is host/session wiring (keyboard-switch command,
 -- spell-file folder); `base_config` is the DEFAULT spelling / insert-mode profile that
 -- gets copied into the runtime state (see state.lua) — either verbatim, or replaced by a
--- project-local .lvim_linguistics.json.
+-- project-local .lvim/linguistics/config.json.
 --
 ---@module "lvim-linguistics.config"
 
@@ -130,7 +130,7 @@ local M = {
     -- The settings panel is hosted by lvim-control-center (a required dependency) as its OWN
     -- instance with its OWN database — for the GLOBAL default. control-center REGISTERS the
     -- command (the plugin no longer makes one), so `:LvimLinguistics` is the panel command +
-    -- the quick toggles (subcommands). A project-local `.lvim_linguistics.json` (Config tab →
+    -- the quick toggles (subcommands). A project-local `.lvim/linguistics/config.json` (Config tab →
     -- Save as local config) overrides the global per directory.
     settings_panel = {
         command = "LvimLinguistics", -- the user command that opens the panel (owned by control-center)

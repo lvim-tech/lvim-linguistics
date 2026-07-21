@@ -26,12 +26,6 @@ local M = {}
 ---@type LvimControlCenterInstance? the dedicated control-center instance (created once)
 M.instance = nil
 
---- Absolute path of the current directory's project-local override file.
----@return string
-local function project_file()
-    return vim.fn.getcwd() .. "/.lvim_linguistics.json"
-end
-
 --- Build the control-center groups. Options come from the STATIC base_config catalogue, so this
 --- needs no populated runtime state; get/set read/write `state.config` live at call time.
 ---@return LvimControlCenterGroup[]
@@ -138,7 +132,8 @@ local function build_groups()
                 type = "action",
                 label = "Save as local config",
                 run = function()
-                    local path = project_file()
+                    utils.create_dir(utils.project_dir())
+                    local path = utils.project_config_path()
                     utils.write_file(path, state.config)
                     vim.notify("Config saved: " .. path, vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
                 end,
@@ -148,7 +143,7 @@ local function build_groups()
                 type = "action",
                 label = "Delete local config",
                 run = function()
-                    local path = project_file()
+                    local path = utils.project_config_path()
                     if utils.exists(path) then
                         utils.delete_file(path)
                         vim.notify("Config deleted", vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
@@ -163,7 +158,7 @@ local function build_groups()
                 type = "action",
                 label = "Show path",
                 run = function()
-                    vim.notify(vim.fn.getcwd(), vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
+                    vim.notify(utils.project_config_path(), vim.log.levels.INFO, { title = "LVIM LINGUISTICS" })
                 end,
             },
         },

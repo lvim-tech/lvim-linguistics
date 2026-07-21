@@ -53,7 +53,7 @@ end
 --- Load the runtime state for the current cwd, in three layers (later wins):
 ---   1. `config.base_config` — the defaults;
 ---   2. the GLOBAL panel settings from the control-center database (via `store`), overlaid;
----   3. a project-local `.lvim_linguistics.json`, which OVERRIDES entirely when present.
+---   3. a project-local `.lvim/linguistics/config.json`, which OVERRIDES entirely when present.
 --- Stored in state.config.
 ---@return nil
 M.get_config = function()
@@ -81,7 +81,7 @@ M.get_config = function()
 
     -- Layer 3 — a project-local override, layered over cfg so a partial file only carries its
     -- overrides (missing keys fall back to the defaults) with clean array REPLACE semantics.
-    local local_config = utils.read_file(vim.fn.getcwd() .. "/.lvim_linguistics.json")
+    local local_config = utils.read_file(utils.project_config_path())
     if local_config then
         if ok_utils and utils_lib.merge then
             cfg = utils_lib.merge(cfg, local_config)

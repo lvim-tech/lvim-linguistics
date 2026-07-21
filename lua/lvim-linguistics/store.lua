@@ -2,7 +2,7 @@
 --
 -- Bound (via `M.bind`, from panel.setup) to the settings panel's lvim-control-center instance
 -- data — so the global default lives in that instance's database. `funcs.get_config` overlays
--- these values onto `base_config`; a project-local `.lvim_linguistics.json` overrides them per
+-- these values onto `base_config`; a project-local `.lvim/linguistics/config.json` overrides them per
 -- directory. No-op until bound (control-center absent) — the plugin then falls back to
 -- base_config + the project file, exactly as before.
 --

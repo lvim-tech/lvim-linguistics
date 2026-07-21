@@ -126,7 +126,7 @@ M.spell_file_missing = function()
 end
 
 --- Install the DirChanged autocmd: reload the runtime state (picking up a project-local
---- .lvim_linguistics.json) and re-apply the active features whenever the global cwd changes.
+--- .lvim/linguistics/config.json) and re-apply the active features whenever the global cwd changes.
 ---@return nil
 M.change_directory = function()
     vim.api.nvim_create_autocmd("DirChanged", {

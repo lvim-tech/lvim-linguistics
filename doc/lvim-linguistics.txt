@@ -29,7 +29,7 @@ language:
 Both features honour a per-filetype allow-list: a `black_list` (never active
 there) and, when non-empty, a `white_list` (active ONLY there). The active
 profile is per working directory and may be persisted to a project-local
-`.lvim_linguistics.json` (see |lvim-linguistics-local|).
+`.lvim/linguistics/config.json` (see |lvim-linguistics-local|).
 
 ==============================================================================
 2. REQUIREMENTS                             *lvim-linguistics-requirements*
@@ -115,7 +115,7 @@ base_config.spell ~
 ==============================================================================
 5. LOCAL PROJECT CONFIG                            *lvim-linguistics-local*
 
-When the cwd contains a `.lvim_linguistics.json`, it REPLACES base_config as
+When the cwd contains a `.lvim/linguistics/config.json`, it REPLACES base_config as
 the runtime profile for that directory; otherwise a deep copy of base_config
 is used. The file is reloaded on |DirChanged|. Save / delete it from the
 Config tab of the panel (see |lvim-linguistics-panel|).
@@ -127,7 +127,7 @@ Config tab of the panel (see |lvim-linguistics-panel|).
 
   Spelling     toggle spelling; pick the active language.
   Insert Mode  toggle insert-mode switching; pick the insert layout.
-  Config       save the current profile as a local `.lvim_linguistics.json`,
+  Config       save the current profile as a local `.lvim/linguistics/config.json`,
                delete it, or show the cwd.
 
 Panel keys (defaults, configurable via config.ui popup_global.keys):
@@ -154,7 +154,7 @@ control-center command plus the plugin's quick toggles:
   :LvimLinguistics preset {save|load|list|delete} {name}  Named settings profiles.
 
 The panel's settings are the GLOBAL default (in the panel's own database); a project-local
-`.lvim_linguistics.json` (Config tab -> Save as local config) overrides them per directory.
+`.lvim/linguistics/config.json` (Config tab -> Save as local config) overrides them per directory.
 
 ==============================================================================
 8. SPELL FILES                                *lvim-linguistics-spellfiles*

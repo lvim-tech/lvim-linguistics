@@ -1,12 +1,18 @@
 -- lvim-linguistics.utils: small filesystem/keymap helpers.
--- Reading/writing the project-local .lvim_linguistics.json (JSON <-> table) and the
--- spell-file folder live here. Config merging is NOT reimplemented — setup() uses the
--- shared lvim-utils.utils.merge (clean array REPLACE), so a user black_list replaces the
--- default instead of being appended to it.
+-- Reading/writing the project-local config (JSON <-> table) and the spell-file folder live
+-- here. Config merging is NOT reimplemented — setup() uses the shared lvim-utils.utils.merge
+-- (clean array REPLACE), so a user black_list replaces the default instead of being appended
+-- to it.
+--
+-- Project-local config path: the config lives under the unified ".lvim/<plugin>/" project
+-- namespace (".lvim/linguistics/config.json").
 --
 ---@module "lvim-linguistics.utils"
 
 local M = {}
+
+local NEW_DIR_REL = "/.lvim/linguistics"
+local NEW_REL = "/.lvim/linguistics/config.json"
 
 --- Set a buffer/global keymap with `noremap` on by default.
 ---@param mode string|string[]  Mode(s), as accepted by vim.keymap.set
@@ -84,6 +90,18 @@ end
 ---@return boolean     True if the path exists
 M.exists = function(name)
     return vim.uv.fs_stat(name) ~= nil
+end
+
+--- Directory holding the project-local config under the unified ".lvim" namespace.
+---@return string
+M.project_dir = function()
+    return vim.fn.getcwd() .. NEW_DIR_REL
+end
+
+--- The project-local config file (".lvim/linguistics/config.json").
+---@return string
+M.project_config_path = function()
+    return vim.fn.getcwd() .. NEW_REL
 end
 
 return M
