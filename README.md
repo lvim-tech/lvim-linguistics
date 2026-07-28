@@ -37,30 +37,6 @@ Install and manage it from the LVIM package manager — open the **Plugins** tab
 
 lvim-installer installs plugins through Neovim's built-in `vim.pack`, so no external plugin manager is needed.
 
-### lazy.nvim
-
-```lua
-return {
-    "lvim-tech/lvim-linguistics",
-    dependencies = { "lvim-tech/lvim-utils" },
-    config = function()
-        require("lvim-linguistics").setup({})
-    end,
-}
-```
-
-### packer.nvim
-
-```lua
-use({
-    "lvim-tech/lvim-linguistics",
-    requires = { "lvim-tech/lvim-utils" },
-    config = function()
-        require("lvim-linguistics").setup({})
-    end,
-})
-```
-
 ### Native (vim.pack)
 
 ```lua
