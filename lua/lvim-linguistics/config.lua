@@ -100,7 +100,7 @@ end
 ---@class LvimLinguisticsConfig
 ---@field plugin_config LvimLinguisticsPluginConfig  Host/session wiring
 ---@field base_config   LvimLinguisticsBaseConfig    Default spelling / insert-mode profile
----@field settings_panel { command?: string, save?: string }  The settings panel, hosted by lvim-control-center: `command` = the user command that opens it, `save` = its OWN database directory
+---@field settings_panel { command?: string, layout?: string }  The project-local settings panel: `command` = the user command that opens it, `layout` = how it opens ("float"|"area"|"bottom")
 
 ---@type LvimLinguisticsConfig
 local M = {
@@ -110,14 +110,13 @@ local M = {
         -- here produced a double slash (".../spell//en.utf-8.spl") in every path and notify.
         spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
     },
-    -- The settings panel is hosted by lvim-control-center (a required dependency) as its OWN
-    -- instance with its OWN database — for the GLOBAL default. control-center REGISTERS the
-    -- command (the plugin no longer makes one), so `:LvimLinguistics` is the panel command +
-    -- the quick toggles (subcommands). A project-local `.lvim/linguistics/config.json` (Config tab →
-    -- Save as local config) overrides the global per directory.
+    -- The PROJECT-LOCAL settings panel (lvim-ui), opened by `command` — which also carries the quick
+    -- toggles as subcommands. It writes `.lvim/linguistics/config.json`, a partial `base_config`
+    -- overlay for one directory. The GLOBAL settings are not here: they are a group in the control
+    -- center, stored in its database (see `lvim-linguistics.store`).
     settings_panel = {
-        command = "LvimLinguistics", -- the user command that opens the panel (owned by control-center)
-        save = nil, -- database directory; nil → stdpath("data")/lvim-linguistics
+        command = "LvimLinguistics", -- the user command that opens the panel + the toggles
+        layout = "float", -- "float" (centred modal) | "area" (cmdline zone) | "bottom"
     },
     base_config = {
         mode_language = {

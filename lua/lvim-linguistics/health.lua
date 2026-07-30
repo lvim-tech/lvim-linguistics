@@ -1,12 +1,13 @@
 -- lvim-linguistics.health: :checkhealth lvim-linguistics
--- Reports the Neovim version, the lvim-utils + lvim-control-center dependencies, the keyboard-switch tool for
--- the current session, the spell-file folder + curl (used to download dictionaries),
--- and the loaded runtime state.
+-- Reports the Neovim version, the lvim-utils + lvim-ui dependencies, the two settings layers and
+-- which one is in effect here, the keyboard-switch tool for the current session, the spell-file
+-- folder + curl (used to download dictionaries), and the loaded runtime state.
 --
 ---@module "lvim-linguistics.health"
 
 local config = require("lvim-linguistics.config")
 local state = require("lvim-linguistics.state")
+local store = require("lvim-linguistics.store")
 
 local M = {}
 
@@ -31,20 +32,35 @@ function M.check()
         health.warn("lvim-utils not found — highlights are unavailable")
     end
 
-    -- lvim-control-center hosts the settings panel (its own instance + database for the global
-    -- default). Absent → :LvimLinguistics panel can't open (spelling/insert-mode still work).
+    -- lvim-ui renders the project-local settings panel (the canonical tabbed-form preset). Absent →
+    -- the panel can't open, though spelling / insert-mode switching still work.
     local p = config.settings_panel or {}
-    if pcall(require, "lvim-control-center") then
-        local cc = require("lvim-control-center")
-        local inst = cc.get(p.command or "LvimLinguistics")
-        if inst and inst.db and inst.db:is_open() then
-            health.ok(("settings panel database open (%s, :%s)"):format(inst.config.save, inst.config.command))
-        else
-            health.info("lvim-control-center found — the settings panel opens on first use")
-        end
+    if pcall(require, "lvim-ui") then
+        health.ok(("settings panel available (:%s)"):format(p.command or "LvimLinguistics"))
     else
-        health.error("lvim-control-center not found — :LvimLinguistics panel (settings) is unavailable")
+        health.error("lvim-ui not found — the :LvimLinguistics settings panel is unavailable")
     end
+
+    -- The two layers: the global one is delivered by the control center's settings group (so an empty
+    -- one means either nothing stored or no group registered), the local one is this project's file.
+    local globals = {}
+    for key in pairs(store.FIELDS) do
+        if store.get_global(key) ~= nil then
+            globals[#globals + 1] = key
+        end
+    end
+    if #globals > 0 then
+        table.sort(globals)
+        health.ok("global settings (from the control center): " .. table.concat(globals, ", "))
+    else
+        health.info("global settings: none — add the linguistics group to your control center to store them")
+    end
+    if store.has_local() then
+        health.ok("this directory's settings: " .. store.path())
+    else
+        health.info("this directory's settings: none (" .. store.path() .. ")")
+    end
+    health.info(("in effect here: the %s settings"):format(store.scope()))
 
     -- Keyboard-layout switch tool for the current session.
     local cmd = config.plugin_config.kbrd_cmd

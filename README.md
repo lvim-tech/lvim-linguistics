@@ -25,7 +25,8 @@ Keyboard switching depends on your display server. The plugin auto-detects the s
 
 ## Installation
 
-Requires Neovim >= 0.10 and [lvim-utils](https://github.com/lvim-tech/lvim-utils).
+Requires Neovim >= 0.10, [lvim-utils](https://github.com/lvim-tech/lvim-utils) and
+[lvim-ui](https://github.com/lvim-tech/lvim-ui) (the settings panel).
 
 ### lvim-installer (recommended)
 
@@ -42,6 +43,7 @@ lvim-installer installs plugins through Neovim's built-in `vim.pack`, so no exte
 ```lua
 vim.pack.add({
     { src = "https://github.com/lvim-tech/lvim-utils" },
+    { src = "https://github.com/lvim-tech/lvim-ui" },
     { src = "https://github.com/lvim-tech/lvim-linguistics" },
 })
 require("lvim-linguistics").setup({})
@@ -49,57 +51,68 @@ require("lvim-linguistics").setup({})
 
 ## Configuration
 
-### plugin_config
+Every option, at its default value:
 
 ```lua
-plugin_config = {
-    -- Keyboard switch command. Auto-detected from XDG_SESSION_TYPE /
-    -- XDG_CURRENT_DESKTOP / WAYLAND_DISPLAY at startup.
-    -- Can be a string prefix ("xkb-switch -s ") or a function:
-    --
-    --   kbrd_cmd = function(lang)
-    --       local idx = { en = 0, bg = 1 }
-    --       return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
-    --   end
-    --
-    kbrd_cmd = "<auto-detected>",
+require("lvim-linguistics").setup({
+    plugin_config = {
+        -- Keyboard switch command. Auto-detected from XDG_SESSION_TYPE /
+        -- XDG_CURRENT_DESKTOP / WAYLAND_DISPLAY at startup, so the default shown
+        -- here depends on the session. Can be a string prefix or a function:
+        --
+        --   kbrd_cmd = function(lang)
+        --       local idx = { en = 0, bg = 1 }
+        --       return "hyprctl switchxkblayout all " .. (idx[lang] or 0)
+        --   end
+        --
+        kbrd_cmd = "xkb-switch -s ",
 
-    -- Folder where spell files (.spl) are stored.
-    -- Files are downloaded automatically on first use (async, no blocking).
-    spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
-}
-```
-
-### base_config
-
-```lua
-base_config = {
-    mode_language = {
-        active = false,
-        file_types = {
-            black_list = { ... }, -- filetypes where switching is disabled
-            white_list = {},
-        },
-        normal_mode_language = nil, -- layout name used in Normal mode
-        insert_mode_language = nil, -- layout name used in Insert mode
-        insert_mode_languages = {}, -- selectable layouts in the UI
+        -- Folder where spell files (.spl) are stored. Files are downloaded
+        -- automatically on first use (async, no blocking).
+        spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
     },
-    spell = {
-        active = false,
-        file_types = {
-            black_list = { ... },
-            white_list = {},
+
+    settings_panel = {
+        -- The user command that opens the panel and carries the quick toggles.
+        command = "LvimLinguistics",
+        -- How the panel opens: "float" | "area" | "bottom".
+        layout = "float",
+    },
+
+    base_config = {
+        mode_language = {
+            active = false,
+            file_types = {
+                -- Real files whose content is not prose. Panels, pickers and terminals
+                -- are excluded structurally (by 'buftype'), never by name.
+                black_list = { "diff", "log" },
+                -- When non-empty, the feature runs ONLY in these filetypes.
+                white_list = {},
+            },
+            normal_mode_language = nil, -- layout id restored on InsertLeave
+            insert_mode_language = nil, -- layout id set on InsertEnter
+            insert_mode_languages = {}, -- selectable layouts in the panel
         },
-        language = nil, -- active language key (must exist in languages)
-        languages = {
-            en = {
-                spelllang = "en",
-                spellfile = "en.add",
+        spell = {
+            active = false,
+            file_types = {
+                black_list = { "diff", "log" },
+                white_list = {},
+            },
+            language = nil, -- active language key (must exist in languages)
+            languages = {
+                en = {
+                    spelllang = "en",
+                    spellfile = "en.add",
+                },
             },
         },
     },
-}
+})
 ```
+
+`base_config` is the DEFAULT profile. The settings panel's two layers are partial overlays of it
+— see [The settings panel](#the-settings-panel).
 
 ### Full example
 
@@ -150,22 +163,52 @@ All functionality is exposed through a single command with subcommands:
 :LvimLinguistics [subcommand]
 ```
 
-The command is owned by **lvim-control-center** (which hosts the panel), so besides opening
-it, it carries the full control-center command — plus the plugin's quick toggles:
-
 | Subcommand           | Description                                                     |
 | -------------------- | -------------------------------------------------------------- |
 | _(none)_             | Open the settings panel                                        |
-| `Spelling` / `Insert Mode` / `Config` | Open the panel focused on that tab (by name)  |
-| `toggle-spelling`    | Toggle spell checking on/off (no panel)                        |
+| `global`             | Open the panel on the **Global** tab                           |
+| `local`              | Open the panel on the **This directory** tab                   |
+| `toggle-spelling`    | Toggle spell checking on/off, for this session (no panel)      |
 | `toggle-insert-mode` | Toggle insert-mode language switching on/off (no panel)        |
-| `export` / `import` / `reset` | Export / import / reset the global settings           |
-| `search`             | Fuzzy-search every setting across the tabs                     |
-| `preset save\|load\|list\|delete <name>` | Named global-settings profiles             |
 
-The panel's settings are the **global default** (stored in the panel's own database); a
-project-local `.lvim/linguistics/config.json` (Config tab → _Save as local config_) overrides them
-per directory.
+A trailing `float` / `area` / `bottom` picks how the panel opens, overriding
+`settings_panel.layout` for that one open:
+
+```
+:LvimLinguistics local bottom
+```
+
+### The settings panel
+
+Two tabs, the same settings on each — the tab chooses **where a permanent save lands**:
+
+| Tab              | Stored in                                     | Reaches            |
+| ---------------- | --------------------------------------------- | ------------------ |
+| `Global`         | the control center's database                 | every project      |
+| `This directory` | `<cwd>/.lvim/linguistics/config.json`         | this directory — and it wins |
+
+The global half is deliberately **not** a file of the plugin's own: those are editor-wide
+preferences, so they live with every other one, in the control center. The same values are editable
+from its own panel — one store, two ways in. The per-directory override is the half that cannot live
+there (a one-value-per-name database has no notion of a directory), so it stays a document in the
+project.
+
+To get the global rows in your control center, splice the plugin's settings into a group of your own
+— see `lvim-linguistics.store`: `store.bind_global(fn)` tells the plugin where to persist them, and
+`store.set_global(key, value)` / `store.save_global(key, value)` are the session and permanent
+halves. Without a binding the global layer is session-only.
+
+The model is **edit = now, save = forever**:
+
+- Changing a row takes effect immediately and writes **nothing** — close Neovim and it is gone.
+  That is exactly what the `toggle-*` subcommands do.
+- **Save permanently** stores the tab's values in that tab's layer. On the local tab it reads
+  **Rewrite this directory's settings** once the document exists.
+- **Delete this directory's settings** removes the document, so the global settings apply here
+  again. It is inert while there is none.
+
+While this directory has no document of its own, the two tabs are the same thing: the local tab
+mirrors the global one live, including edits that have not been saved yet.
 
 ### Keymaps example
 

@@ -70,43 +70,29 @@ end
 
 --- Load the runtime state for the current cwd, in three layers (later wins):
 ---   1. `config.base_config` — the defaults;
----   2. the GLOBAL panel settings from the control-center database (via `store`), overlaid;
----   3. a project-local `.lvim/linguistics/config.json`, which OVERRIDES entirely when present.
+---   2. the GLOBAL settings, from the control center's database, for every project;
+---   3. a project-local `.lvim/linguistics/config.json`, for this directory only.
+--- Layers 2 and 3 are the SAME shape (a partial base_config), so both fold in through one merge and
+--- a partial layer carries only its own overrides — every key it omits keeps the layer below.
 --- Stored in state.config.
 ---@return nil
 M.get_config = function()
     local cfg = vim.deepcopy(config.base_config)
 
-    -- Layer 2 — the global default from the panel's database (nil / unbound = left as base).
-    local function overlay(key, apply)
-        local v = store.load(key)
-        if v ~= nil then
-            apply(v)
+    --- Fold one layer over `cfg` with clean array REPLACE semantics (an override list IS the list).
+    ---@param layer_cfg table?
+    local function overlay(layer_cfg)
+        if not layer_cfg or not next(layer_cfg) then
+            return
         end
-    end
-    overlay("spell_active", function(v)
-        cfg.spell.active = v == true
-    end)
-    overlay("spell_language", function(v)
-        cfg.spell.language = v
-    end)
-    overlay("mode_active", function(v)
-        cfg.mode_language.active = v == true
-    end)
-    overlay("insert_mode_language", function(v)
-        cfg.mode_language.insert_mode_language = v
-    end)
-
-    -- Layer 3 — a project-local override, layered over cfg so a partial file only carries its
-    -- overrides (missing keys fall back to the defaults) with clean array REPLACE semantics.
-    local local_config = utils.read_file(utils.project_config_path())
-    if local_config then
         if ok_utils and utils_lib.merge then
-            cfg = utils_lib.merge(cfg, local_config)
+            cfg = utils_lib.merge(cfg, layer_cfg)
         else
-            cfg = vim.tbl_deep_extend("force", cfg, local_config)
+            cfg = vim.tbl_deep_extend("force", cfg, layer_cfg)
         end
     end
+    overlay(store.global_config())
+    overlay(store.read_local())
 
     state.config = cfg
 end

@@ -1,11 +1,10 @@
--- lvim-linguistics: public entry point (setup + the two long-lived autocmds).
+-- lvim-linguistics: public entry point (setup + the command + the two long-lived autocmds).
 -- setup() merges user options into the live config (via lvim-utils.utils.merge — clean
 -- array REPLACE), registers the LvimLinguistics* highlight groups through lvim-utils so
--- they survive colorscheme changes, creates the settings panel's lvim-control-center instance
--- (which owns the `:LvimLinguistics` command), loads the per-cwd runtime state, then defers the
--- first activation pass by a tick so a project-local config is picked up after the cwd is
--- settled. SpellFileMissing downloads a missing .spl/.sug on demand; DirChanged reloads the
--- runtime state (and re-applies) when the cwd changes.
+-- they survive colorscheme changes, registers the `:LvimLinguistics` command, loads the per-cwd
+-- runtime state, then defers the first activation pass by a tick so a project-local config is
+-- picked up after the cwd is settled. SpellFileMissing downloads a missing .spl/.sug on demand;
+-- DirChanged reloads the runtime state (and re-applies) when the cwd changes.
 --
 ---@module "lvim-linguistics"
 
@@ -69,17 +68,64 @@ M.setup = function(user_config)
     end
 
     funcs.check_dir()
-    -- Create the settings panel's dedicated control-center instance (own command + own database)
-    -- and bind the global store to it BEFORE get_config, so the global layer is read on load.
-    pcall(function()
-        require("lvim-linguistics.panel").setup()
-    end)
+    M.command()
     funcs.get_config()
     M.spell_file_missing()
     vim.defer_fn(function()
         funcs.process()
         M.change_directory()
     end, 10)
+end
+
+--- The panel tabs / quick toggles offered as the FIRST argument. A layout token may follow any of
+--- them (panel canon §2), and the completion offers each pool only where it can actually appear —
+--- everything at once is what makes a command's completion unreadable.
+---@type string[]
+local SUBCOMMANDS = { "global", "local", "toggle-spelling", "toggle-insert-mode" }
+---@type string[]
+local LAYOUTS = { "float", "area", "bottom" }
+
+--- Register `:LvimLinguistics` — the settings panel, plus the two quick toggles as subcommands so a
+--- keymap has one command to reach everything the plugin does.
+---   :LvimLinguistics [global|local] [float|area|bottom]   open the panel (on that layer's tab)
+---   :LvimLinguistics toggle-spelling                      spelling on/off, for this session
+---   :LvimLinguistics toggle-insert-mode                   insert-mode layout switching on/off
+---@return nil
+M.command = function()
+    local name = (config.settings_panel or {}).command or "LvimLinguistics"
+    vim.api.nvim_create_user_command(name, function(opts)
+        local sub, layout
+        for _, arg in ipairs(opts.fargs) do
+            if vim.tbl_contains(LAYOUTS, arg) then
+                layout = arg
+            else
+                sub = sub or arg
+            end
+        end
+        if sub == "toggle-spelling" then
+            funcs.toggle_spelling()
+        elseif sub == "toggle-insert-mode" then
+            funcs.toggle_insert_mode_language()
+        else
+            require("lvim-linguistics.panel").open(sub, layout)
+        end
+    end, {
+        nargs = "*",
+        desc = "lvim-linguistics: settings panel and quick toggles",
+        ---@param lead string  the argument being typed
+        ---@param line string  the whole command line so far
+        ---@return string[]
+        complete = function(lead, line)
+            -- Which argument POSITION is being typed: the words already on the line, minus the command
+            -- itself, minus the partial word under the cursor. Position 0 is the first argument.
+            local words = vim.split(vim.trim(line), "%s+")
+            local pos = #words - 1 - (lead == "" and 0 or 1)
+            local pool = pos <= 0 and SUBCOMMANDS or LAYOUTS
+            return vim.tbl_filter(function(item)
+                return item:find(lead, 1, true) == 1
+            end, pool)
+        end,
+    })
 end
 
 --- Install the SpellFileMissing autocmd: when Neovim asks for a spell file that isn't on

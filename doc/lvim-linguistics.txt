@@ -7,7 +7,7 @@ CONTENTS                                                *lvim-linguistics*
   2. Requirements ........................... |lvim-linguistics-requirements|
   3. Setup .................................. |lvim-linguistics-setup|
   4. Configuration .......................... |lvim-linguistics-config|
-  5. Local project config ................... |lvim-linguistics-local|
+  5. Settings layers ........................ |lvim-linguistics-local|
   6. Panel .................................. |lvim-linguistics-panel|
   7. Command ................................ |:LvimLinguistics|
   8. Spell files ............................ |lvim-linguistics-spellfiles|
@@ -28,14 +28,15 @@ language:
 
 Both features honour a per-filetype allow-list: a `black_list` (never active
 there) and, when non-empty, a `white_list` (active ONLY there). The active
-profile is per working directory and may be persisted to a project-local
-`.lvim/linguistics/config.json` (see |lvim-linguistics-local|).
+profile is per working directory: a global layer applies everywhere and a
+project-local one overrides it (see |lvim-linguistics-local|).
 
 ==============================================================================
 2. REQUIREMENTS                             *lvim-linguistics-requirements*
 
   • Neovim >= 0.10
-  • lvim-utils (palette + merge + the settings-panel UI)
+  • lvim-utils (palette + merge + the settings store)
+  • lvim-ui (the settings panel)
   • curl (to download spell files / dictionaries)
   • a keyboard-layout switch tool for your session, auto-detected:
 
@@ -113,48 +114,87 @@ base_config.spell ~
   languages              Table of `key = { spelllang, spellfile }`.
 
 ==============================================================================
-5. LOCAL PROJECT CONFIG                            *lvim-linguistics-local*
+5. SETTINGS LAYERS                                 *lvim-linguistics-local*
 
-When the cwd contains a `.lvim/linguistics/config.json`, it REPLACES base_config as
-the runtime profile for that directory; otherwise a deep copy of base_config
-is used. The file is reloaded on |DirChanged|. Save / delete it from the
-Config tab of the panel (see |lvim-linguistics-panel|).
+The runtime profile is three layers, later winning:
+
+  1. `base_config`                          the defaults from setup()
+  2. the GLOBAL settings                    every project
+  3. `<cwd>/.lvim/linguistics/config.json`  this directory only
+
+Layers 2 and 3 are the same shape — a partial `base_config` — so each carries
+only the keys it overrides and everything else falls through.
+
+The GLOBAL layer is not a file of the plugin's own: it is an editor-wide
+preference, so it is stored where the rest of them are — the control center's
+database. The plugin holds the live values (`lvim-linguistics.store`) and is
+told where to persist them: >lua
+
+  local store = require("lvim-linguistics.store")
+  store.bind_global(function(key, value)  -- where "permanently" writes
+      require("lvim-control-center").get("LvimControlCenter").data:save(key, value)
+  end)
+  store.set_global(key, value)   -- this session only
+  store.save_global(key, value)  -- and persist it
+<
+Without a binding the global layer is session-only. `store.FIELDS` names the
+four settings and where each lands in the config.
+
+The LOCAL layer is the half that cannot live in a one-value-per-name database
+(it belongs to a directory, not to the editor), so it stays a document, written
+through the shared `lvim-utils.store` json backend and re-read on |DirChanged|.
+A document changed on disk by ANOTHER Neovim instance is picked up and
+re-applied here.
 
 ==============================================================================
 6. PANEL                                           *lvim-linguistics-panel*
 
-`:LvimLinguistics` opens a tabbed settings panel (built on the lvim-utils UI):
+`:LvimLinguistics` opens a two-tab settings panel (built on lvim-ui). Both
+tabs carry the SAME rows; the tab chooses where a permanent save lands:
 
-  Spelling     toggle spelling; pick the active language.
-  Insert Mode  toggle insert-mode switching; pick the insert layout.
-  Config       save the current profile as a local `.lvim/linguistics/config.json`,
-               delete it, or show the cwd.
+  Global          -> the global layer, for every project
+  This directory  -> the local document, for this directory (and it wins)
 
-Panel keys (defaults, configurable via config.ui popup_global.keys):
+The model is: EDIT = now, SAVE = forever.
+
+  • Changing a row takes effect immediately and writes NOTHING — close Neovim
+    and it is gone. This is exactly what the toggle-* subcommands do.
+  • `Save permanently` stores the tab's values in that tab's layer. On the
+    local tab it reads `Rewrite this directory's settings` once the document
+    exists.
+  • `Delete this directory's settings` removes the document, so the global
+    layer applies here again. It is inert while there is none.
+
+While this directory has no document of its own, the two tabs are the same
+thing: the local tab mirrors the global one live, including edits that have
+not been saved yet.
+
+The global rows are the same values the control center edits, when its
+settings are wired to this plugin (see |lvim-linguistics-local|).
+
+Panel keys:
 
   j / k        move down / up
   h / l        previous / next tab
-  <Space>      toggle a bool / multiselect row
+  <Space>      toggle a bool row
   <CR>         confirm / run the focused row
   <Esc> / q    close
 
 ==============================================================================
 7. COMMAND                                            *:LvimLinguistics*
 
-The command is owned by lvim-control-center (which hosts the panel), so it carries the full
-control-center command plus the plugin's quick toggles:
-
   :LvimLinguistics                    Open the settings panel.
-  :LvimLinguistics Spelling           Open the panel on the Spelling tab (by name).
-  :LvimLinguistics {Insert Mode|Config}  Open on that tab.
-  :LvimLinguistics toggle-spelling    Toggle spell checking on/off (no panel).
-  :LvimLinguistics toggle-insert-mode Toggle insert-mode switching on/off (no panel).
-  :LvimLinguistics {export|import|reset}  Export / import / reset the global settings.
-  :LvimLinguistics search             Fuzzy-search every setting across the tabs.
-  :LvimLinguistics preset {save|load|list|delete} {name}  Named settings profiles.
+  :LvimLinguistics global             Open the panel on the Global tab.
+  :LvimLinguistics local              Open the panel on the This directory tab.
+  :LvimLinguistics toggle-spelling    Toggle spell checking for this session.
+  :LvimLinguistics toggle-insert-mode Toggle insert-mode switching for this session.
 
-The panel's settings are the GLOBAL default (in the panel's own database); a project-local
-`.lvim/linguistics/config.json` (Config tab -> Save as local config) overrides them per directory.
+A trailing `float`, `area` or `bottom` overrides `settings_panel.layout` for
+that one open: >
+
+  :LvimLinguistics local bottom
+<
+The command name itself is `settings_panel.command`.
 
 ==============================================================================
 8. SPELL FILES                                *lvim-linguistics-spellfiles*
