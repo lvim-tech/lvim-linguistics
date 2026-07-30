@@ -28,10 +28,28 @@ local M = {}
 
 --- Whether a feature may engage in `ft`, per its filetype gating: excluded when in
 --- `black_list`; when `white_list` is non-empty, allowed ONLY if `ft` is in it.
+--- Whether `buf` holds an actual FILE the user edits, as opposed to a plugin's own surface.
+--- This is the structural gate that the filetype lists cannot be: a panel, popup, picker, terminal,
+--- quickfix or prompt buffer all carry a non-empty 'buftype', while every real file has "". Keying on
+--- names instead meant the black list had to enumerate every UI in the editor — it still listed the
+--- THIRD-PARTY ones this set replaced (`NvimTree`, `neo-tree`, `packer`, `alpha`, `dapui_*`) and knew
+--- nothing about the current panels, so enabling spelling immediately underlined the file tree, the
+--- control-center popup and every installer prompt. A filetype list is the right tool for choosing
+--- among real files (skip `log`, allow `tex`); it is the wrong tool for "is this a file at all".
+---@param buf integer
+---@return boolean
+local function is_real_file(buf)
+    return vim.bo[buf].buftype == ""
+end
+
 ---@param file_types LvimLinguisticsFileTypes  The feature's file_types block
 ---@param ft string                            The buffer filetype to test
+---@param buf? integer                         The buffer (defaults to the current one)
 ---@return boolean allowed
-local function is_ft_allowed(file_types, ft)
+local function is_ft_allowed(file_types, ft, buf)
+    if not is_real_file(buf or vim.api.nvim_get_current_buf()) then
+        return false
+    end
     if vim.tbl_contains(file_types.black_list or {}, ft) then
         return false
     end

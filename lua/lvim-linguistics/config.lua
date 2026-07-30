@@ -8,38 +8,21 @@
 --
 ---@module "lvim-linguistics.config"
 
--- Filetypes shared by both features' black_list: panels/pickers/terminals/etc. where
--- neither spelling nor keyboard switching should ever engage.
+-- Filetypes shared by both features' black_list — for REAL FILES only.
+--
+-- Panels, pickers, popups and terminals are NOT listed here and must not be: they are excluded
+-- structurally, by their non-empty 'buftype' (see `is_real_file` in funcs.lua). The list used to
+-- enumerate them by name — and named the THIRD-PARTY plugins this set replaced (`NvimTree`,
+-- `neo-tree`, `packer`, `alpha`, `undotree`, `Trouble`, `dapui_*`, `noice`, …), none of which exist
+-- here any more, while knowing nothing about the current ones. The result was spelling underlining
+-- the file tree, the control-center popup and every installer prompt. A name list can never keep up
+-- with the editor's own surfaces; 'buftype' already answers "is this a file at all".
+--
+-- What remains is the only thing a filetype list is good for: real files whose CONTENT is not prose.
 ---@type string[]
 local shared_blacklist = {
-    "alpha",
-    "ctrlspace",
-    "ctrlspace_help",
-    "packer",
-    "undotree",
     "diff",
-    "Outline",
-    "NvimTree",
-    "LvimHelper",
-    "floaterm",
-    "toggleterm",
-    "Trouble",
-    "dashboard",
-    "vista",
-    "spectre_panel",
-    "DiffviewFiles",
-    "flutterToolsOutline",
     "log",
-    "qf",
-    "dapui_scopes",
-    "dapui_breakpoints",
-    "dapui_stacks",
-    "dapui_watches",
-    "calendar",
-    "octo",
-    "neo-tree",
-    "neo-tree-popup",
-    "noice",
 }
 
 --- Pick the keyboard-layout switch command for the current display server/desktop.
