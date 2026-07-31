@@ -4,8 +4,9 @@
 --     restore the normal layout, gated by the filetype allow-list.
 --   • Spelling: ensure the dictionary is on disk (download on demand), then 'setlocal spell'
 --     on the allowed buffers via WinEnter/BufEnter.
--- The active values live in state.config (config.lua holds only the DEFAULTS); filetype
--- gating honours BOTH file_types.black_list (never) and file_types.white_list (only these).
+-- The active values live in state.config (config.lua holds only the DEFAULTS); the buffers each
+-- feature engages in are decided by file_types.black_list / file_types.white_list, compared by how
+-- specifically each claims the buffer's filetype and 'buftype' (see `is_ft_allowed`).
 --
 ---@module "lvim-linguistics.funcs"
 
@@ -26,38 +27,95 @@ local group_spell_enabled = vim.api.nvim_create_augroup("LvimLinguisticsSpellEna
 
 local M = {}
 
---- Whether a feature may engage in `ft`, per its filetype gating: excluded when in
---- `black_list`; when `white_list` is non-empty, allowed ONLY if `ft` is in it.
---- Whether `buf` holds an actual FILE the user edits, as opposed to a plugin's own surface.
---- This is the structural gate that the filetype lists cannot be: a panel, popup, picker, terminal,
---- quickfix or prompt buffer all carry a non-empty 'buftype', while every real file has "". Keying on
---- names instead meant the black list had to enumerate every UI in the editor — it still listed the
---- THIRD-PARTY ones this set replaced (`NvimTree`, `neo-tree`, `packer`, `alpha`, `dapui_*`) and knew
---- nothing about the current panels, so enabling spelling immediately underlined the file tree, the
---- control-center popup and every installer prompt. A filetype list is the right tool for choosing
---- among real files (skip `log`, allow `tex`); it is the wrong tool for "is this a file at all".
----@param buf integer
----@return boolean
-local function is_real_file(buf)
-    return vim.bo[buf].buftype == ""
+--- How strongly one AXIS of a list CLAIMS `value`. The two lists are not ordered against each other
+--- — they are compared — so that `"*"` reads as a BLANKET and a named type as an EXCEPTION to it:
+---   `black_list = { "*" }, white_list = { "tex" }`  — nothing, except TeX;
+---   `white_list = { "*" }, black_list = { "tex" }`  — everything, except TeX.
+--- Whichever list names the type outright wins over the one that only said `"*"`; ranking is what
+--- makes that work in BOTH directions, where a fixed "black first" or "white first" order can only
+--- ever express one of them. An axis may also be given as the bare string `"*"`.
+---@param list string[]|string|nil
+---@param value string
+---@return integer rank  0 = does not claim it, 1 = claimed by "*", 2 = named it exactly
+local function claim(list, value)
+    if type(list) == "string" then
+        list = { list }
+    end
+    local rank = 0
+    for _, entry in ipairs(list or {}) do
+        if entry == value then
+            return 2
+        elseif entry == "*" then
+            rank = 1
+        end
+    end
+    return rank
 end
 
+--- Split a list into its two axes, `ft` (filetype) and `bt` ('buftype').
+--- A bare string or a plain array is shorthand for the `ft` axis, since choosing among real files by
+--- filetype is what these lists are for nearly always — `{ "tex" }` and `{ ft = { "tex" } }` are the
+--- same list.
+---@param list LvimLinguisticsTypeList|nil
+---@return { ft: string[]|string|nil, bt: string[]|string|nil }
+local function axes(list)
+    if list == nil then
+        return {}
+    end
+    if type(list) == "string" or list[1] ~= nil then
+        return { ft = list }
+    end
+    return list
+end
+
+--- Run one axis of the gate: allowed when the white list claims `value` MORE specifically than the
+--- black list does — so an exact name beats a `"*"` from the other side, and on an equal claim (both
+--- `"*"`, or both naming it) the black list wins, because a gate that cannot decide should stay shut.
+---@param black string[]|string|nil
+---@param white string[]|string|nil
+---@param value string
+---@return boolean allowed
+local function axis_allows(black, white, value)
+    -- No allow-list on this axis means "everything is allowed" — the very claim `{ "*" }` makes, so
+    -- the default needs no special case: it loses to any black-listed name and beats a bare `"*"`.
+    local empty = white == nil or (type(white) == "table" and next(white) == nil)
+    local white_rank = empty and 1 or claim(white, value)
+    return white_rank > claim(black, value)
+end
+
+--- Whether a feature may engage in `buf`, per its type gating — the `ft` axis and the `bt` axis, both
+--- of which must allow it.
+---
+--- When NEITHER list mentions `bt`, the 'buftype' gate is the structural one: only actual FILES the
+--- user edits. A panel, popup, picker, terminal, quickfix or prompt buffer all carry a non-empty
+--- 'buftype', while every real file has "". Keying on names instead meant the black list had to
+--- enumerate every UI in the editor — it still listed the THIRD-PARTY ones this set replaced
+--- (`NvimTree`, `neo-tree`, `packer`, `alpha`, `dapui_*`) and knew nothing about the current panels,
+--- so enabling spelling immediately underlined the file tree, the control-center popup and every
+--- installer prompt. That default stays: a filetype list is the right tool for choosing among real
+--- files (skip `log`, allow `tex`), and the wrong tool for "is this a file at all".
+---
+--- Naming `bt` in either list REPLACES that default with the ranked rule above, for whoever does want
+--- spelling in a terminal or a `nofile` scratch buffer. It is deliberately opt-in rather than a
+--- default the `ft` axis could collide with: `black_list.bt = { "*" }` as a default would tie with an
+--- omitted white `bt` and shut the gate on everything the moment a user set `white_list = { "tex" }`.
 ---@param file_types LvimLinguisticsFileTypes  The feature's file_types block
 ---@param ft string                            The buffer filetype to test
 ---@param buf? integer                         The buffer (defaults to the current one)
 ---@return boolean allowed
 local function is_ft_allowed(file_types, ft, buf)
-    if not is_real_file(buf or vim.api.nvim_get_current_buf()) then
+    buf = buf or vim.api.nvim_get_current_buf()
+    local black = axes(file_types.black_list)
+    local white = axes(file_types.white_list)
+    local bt = vim.bo[buf].buftype
+    if black.bt == nil and white.bt == nil then
+        if bt ~= "" then
+            return false
+        end
+    elseif not axis_allows(black.bt, white.bt, bt) then
         return false
     end
-    if vim.tbl_contains(file_types.black_list or {}, ft) then
-        return false
-    end
-    local white = file_types.white_list or {}
-    if #white > 0 then
-        return vim.tbl_contains(white, ft)
-    end
-    return true
+    return axis_allows(black.ft, white.ft, ft)
 end
 
 --- Ensure the spell-file folder exists (create it if missing).
@@ -247,20 +305,37 @@ M.enable_spelling = function()
     if #langs == 0 then
         langs = { spelllang }
     end
-    --- Apply 'spell' to the current buffer if its filetype is allowed.
+    --- Apply 'spell' to the current window, per the filetype gate — setting it when the filetype is
+    --- allowed and CLEARING it when it is not.
+    --- Clearing is not symmetry for its own sake: 'spell' is a WINDOW option, so it outlives the
+    --- buffer that earned it. Only ever switching it on left every window that had once shown an
+    --- allowed filetype spell-checking whatever was loaded into it next — a `white_list = { "tex" }`
+    --- still underlined the `.editorconfig` opened in the TeX window, which reads as the allow-list
+    --- being ignored. While the feature is active the plugin owns the option on both sides.
     ---@return nil
     local function spell()
         spell_cfg = state.config.spell
-        local ft = vim.bo.filetype
-        if is_ft_allowed(spell_cfg.file_types, ft) then
-            -- Set via the API, not :setlocal string interpolation, so a spellfile path with spaces
-            -- (or other :set-special characters) can't break the command. 'spelllang' takes the
-            -- comma list verbatim.
-            vim.opt_local.spell = true
-            vim.opt_local.spelllang = spelllang
-            vim.opt_local.spellfile = folder .. "/" .. spellfile
+        if not is_ft_allowed(spell_cfg.file_types, vim.bo.filetype) then
+            vim.opt_local.spell = false
+            return
+        end
+        -- Set via the API, not :setlocal string interpolation, so a spellfile path with spaces
+        -- (or other :set-special characters) can't break the command. 'spelllang' takes the
+        -- comma list verbatim.
+        vim.opt_local.spell = true
+        vim.opt_local.spelllang = spelllang
+        vim.opt_local.spellfile = folder .. "/" .. spellfile
+    end
+    --- Run the gate over EVERY open window, not just the current one — the same window-scoped
+    --- reasoning: enabling (or re-enabling after a settings change) has to settle the whole screen,
+    --- or a split keeps the answer the old gate gave it until it is next entered.
+    ---@return nil
+    local function spell_all()
+        for _, win in ipairs(vim.api.nvim_list_wins()) do
+            pcall(vim.api.nvim_win_call, win, spell)
         end
     end
+
     spell_cfg.active = true
     -- Enable spell + install the autocmds once EVERY language has settled (already present,
     -- downloaded, or failed). A failed language still settles (on_fail) so a partial comma list
@@ -271,7 +346,7 @@ M.enable_spelling = function()
         pending = pending - 1
         if pending <= 0 and not installed then
             installed = true
-            spell()
+            spell_all()
             vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
                 callback = spell,
                 group = group_spell_enabled,

@@ -250,9 +250,13 @@ local function layer_tab(layer, panel)
                 )
                 return
             end
-            -- Patch the document rather than replacing it: a hand-written key the panel does not
-            -- surface belongs to the user and must survive a save from here.
-            local cfg = store.read_local() or {}
+            -- CREATING the document seeds it from everything that applies here right now (see
+            -- `store.seed`), so a project's first local file is a complete, editable copy of what it
+            -- inherits — including the gating lists, which the panel does not surface — rather than a
+            -- stub of the four fields it does.
+            -- EDITING it only patches those four: a hand-written key belongs to the user, and a save
+            -- from here must not overwrite it with whatever the global layer says now.
+            local cfg = store.has_local() and (store.read_local() or {}) or store.seed()
             for key, value in pairs(values()) do
                 put(cfg, key, value)
             end

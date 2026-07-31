@@ -87,6 +87,7 @@ require("lvim-linguistics").setup({
                 -- are excluded structurally (by 'buftype'), never by name.
                 black_list = { "diff", "log" },
                 -- When non-empty, the feature runs ONLY in these filetypes.
+                -- Either list also takes "*" — see Filetype gating.
                 white_list = {},
             },
             normal_mode_language = nil, -- layout id restored on InsertLeave
@@ -155,6 +156,48 @@ plugin_config = {
 }
 ```
 
+### Filetype gating
+
+Each feature carries its own `file_types` block. The two lists are not applied in a fixed order —
+they are compared, and the **more specific claim wins**. Either list accepts `"*"`, meaning every
+filetype, which turns it into a blanket the other list can carve exceptions out of:
+
+```lua
+-- Nothing, except TeX.
+file_types = { black_list = { "*" }, white_list = { "tex" } }
+
+-- Everything, except TeX.
+file_types = { white_list = { "*" }, black_list = { "tex" } }
+```
+
+So a filetype named outright in one list overrides the other list's `"*"`, in either direction.
+When both claim it equally — both say `"*"`, or both name it — the black list wins.
+
+An empty `white_list` means the same as `{ "*" }`: everything the black list has not excluded. That
+is the default, so the plain `black_list = { "diff", "log" }` above behaves exactly as before.
+
+#### Two axes: `ft` and `bt`
+
+A list has two axes — `ft` (filetype) and `bt` (`'buftype'`) — and **both must allow** the buffer.
+A bare string or a plain array is shorthand for `ft`, so these are the same list:
+
+```lua
+white_list = { "tex" }
+white_list = { ft = { "tex" } }
+```
+
+Until a list names `bt`, panels, pickers, popups, terminals and prompts are excluded structurally,
+by their non-empty `'buftype'` — a real file has `""`. That is what keeps the filetype lists free of
+UI names they could never keep up with. Name `bt` yourself and that default gives way to the same
+ranked rule:
+
+```lua
+-- Spelling in real files and in the terminal.
+white_list = { bt = { "", "terminal" } }
+```
+
+
+
 ## Commands
 
 All functionality is exposed through a single command with subcommands:
@@ -209,6 +252,30 @@ The model is **edit = now, save = forever**:
 
 While this directory has no document of its own, the two tabs are the same thing: the local tab
 mirrors the global one live, including edits that have not been saved yet.
+
+#### What the document contains
+
+The first save **creates** it as a full copy of everything that applies here — the settings from
+`setup()` and the global layer both, gating lists included — so the file is a complete starting
+point you can edit by hand:
+
+```json
+{
+    "spell": {
+        "active": true,
+        "language": "bg",
+        "file_types": { "black_list": ["diff", "log"], "white_list": [] }
+    }
+}
+```
+
+Every save **after** that only patches the four values the panel surfaces (`active`, `language`,
+`insert_mode_language`). Whatever you have hand-written in the file — a `white_list`, a `bt` axis —
+is yours and is left alone.
+
+The one thing a new document does not copy is the **catalogues**, `languages` and
+`insert_mode_languages`: those are what the install offers to choose from, not a choice about this
+directory, so a language you add to `setup()` later still reaches every project.
 
 ### Keymaps example
 

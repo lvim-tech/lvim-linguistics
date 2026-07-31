@@ -26,8 +26,8 @@ language:
   • Insert-mode keyboard language — flips the OS keyboard layout on
     InsertEnter and restores it on InsertLeave, gated per filetype.
 
-Both features honour a per-filetype allow-list: a `black_list` (never active
-there) and, when non-empty, a `white_list` (active ONLY there). The active
+Both features honour per-filetype gating — a `black_list` and a `white_list`,
+either of which takes `"*"` (see |lvim-linguistics-filetypes|). The active
 profile is per working directory: a global layer applies everywhere and a
 project-local one overrides it (see |lvim-linguistics-local|).
 
@@ -100,18 +100,56 @@ plugin_config ~
 
 base_config.mode_language ~
   active                 Whether insert-mode layout switching starts on.
-  file_types.black_list  Filetypes where switching NEVER runs.
-  file_types.white_list  If non-empty, switching runs ONLY in these filetypes.
+  file_types             Where switching runs |lvim-linguistics-filetypes|.
   normal_mode_language   Layout id restored on InsertLeave.
   insert_mode_language   Layout id set on InsertEnter.
   insert_mode_languages  Selectable insert-mode layouts (panel dropdown).
 
 base_config.spell ~
   active                 Whether spell checking starts on.
-  file_types.black_list  Filetypes where 'spell' is NEVER set.
-  file_types.white_list  If non-empty, 'spell' is set ONLY in these filetypes.
+  file_types             Where 'spell' is set |lvim-linguistics-filetypes|.
   language               Active language key (must exist in `languages`).
   languages              Table of `key = { spelllang, spellfile }`.
+
+Filetype gating                              *lvim-linguistics-filetypes*
+
+Each feature carries its own `file_types` block with two lists. They are not
+applied in a fixed order — they are COMPARED, and the more specific claim
+wins. Either list accepts `"*"`, meaning every filetype, which turns it into a
+blanket the other list carves exceptions out of:
+>lua
+  -- Nothing, except TeX.
+  file_types = { black_list = { "*" }, white_list = { "tex" } }
+
+  -- Everything, except TeX.
+  file_types = { white_list = { "*" }, black_list = { "tex" } }
+<
+A filetype named outright in one list therefore overrides the other list's
+`"*"`, in either direction. When both claim it equally — both say `"*"`, or
+both name it — the black list wins.
+
+An empty `white_list` means the same as `{ "*" }`: everything the black list
+has not excluded. That is the default.
+
+A list has two axes — `ft` (filetype) and `bt` ('buftype') — and BOTH must
+allow the buffer. A bare string or a plain array is shorthand for `ft`, so
+`white_list = { "tex" }` and `white_list = { ft = { "tex" } }` are the same
+list.
+
+Until a list names `bt`, panels, pickers, popups, terminals and prompts are
+excluded structurally, by their non-empty 'buftype' — a real file has "".
+That is what keeps the filetype lists free of UI names they could never keep
+up with. Name `bt` yourself and that default gives way to the same ranked
+rule:
+>lua
+  -- Spelling in real files and in the terminal.
+  white_list = { bt = { "", "terminal" } }
+<
+
+Note that 'spell' is a WINDOW option: while spelling is active the plugin sets
+it on the allowed filetypes and CLEARS it on the rest, so a window that has
+shown an allowed file does not keep spell-checking whatever is loaded into it
+next.
 
 ==============================================================================
 5. SETTINGS LAYERS                                 *lvim-linguistics-local*
@@ -145,6 +183,17 @@ The LOCAL layer is the half that cannot live in a one-value-per-name database
 through the shared `lvim-utils.store` json backend and re-read on |DirChanged|.
 A document changed on disk by ANOTHER Neovim instance is picked up and
 re-applied here.
+
+The first save CREATES that document as a full copy of everything applying
+here — setup()'s settings and the global layer both, the gating lists included
+— so it is a complete starting point to edit by hand. Every save after that
+patches only the values the panel surfaces, leaving anything hand-written in
+the file alone.
+
+A new document does not copy the CATALOGUES, `languages` and
+`insert_mode_languages`: they are what the install offers to choose from, not
+a choice about this directory, so a language added to setup() later still
+reaches every project.
 
 ==============================================================================
 6. PANEL                                           *lvim-linguistics-panel*

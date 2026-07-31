@@ -184,6 +184,41 @@ function M.read_local()
     return next(all) and all or nil
 end
 
+--- Keys a seeded document must NOT freeze. `languages` and `insert_mode_languages` are CATALOGUES —
+--- what the install offers to choose from — not choices about this directory. Copied into a project
+--- file they would pin it to the catalogue as it stood the day the file was created, so a language
+--- added to `setup()` later would never reach it.
+---@type table<string, boolean>
+local SEED_SKIP = {
+    languages = true,
+    insert_mode_languages = true,
+}
+
+--- The starting content for a document this directory does not have yet: the settings in force here
+--- right now — the defaults, `setup()`'s overrides and the global layer, already folded into
+--- `state.config` — minus the catalogues above.
+--- This is what makes a new local file a complete, EDITABLE copy of what the project inherits (the
+--- gating lists included) instead of a stub of the fields the panel surfaces. Every later save
+--- patches that document, so whatever is hand-written in it stays.
+---@return table  a partial base_config overlay
+function M.seed()
+    local ok, state = pcall(require, "lvim-linguistics.state")
+    local src = (ok and type(state.config) == "table") and state.config or {}
+    local out = {}
+    for section, values in pairs(src) do
+        if type(values) == "table" then
+            local copy = {}
+            for key, value in pairs(values) do
+                if not SEED_SKIP[key] then
+                    copy[key] = vim.deepcopy(value)
+                end
+            end
+            out[section] = copy
+        end
+    end
+    return out
+end
+
 --- Write the project-local document — every top-level section of `cfg`, so a key the panel does not
 --- surface (a hand-written `file_types`, say) survives as long as the caller passes what it read.
 ---@param cfg table  a partial base_config overlay

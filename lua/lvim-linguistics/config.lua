@@ -11,7 +11,7 @@
 -- Filetypes shared by both features' black_list — for REAL FILES only.
 --
 -- Panels, pickers, popups and terminals are NOT listed here and must not be: they are excluded
--- structurally, by their non-empty 'buftype' (see `is_real_file` in funcs.lua). The list used to
+-- structurally, by their non-empty 'buftype' (see `is_ft_allowed` in funcs.lua). The list used to
 -- enumerate them by name — and named the THIRD-PARTY plugins this set replaced (`NvimTree`,
 -- `neo-tree`, `packer`, `alpha`, `undotree`, `Trouble`, `dapui_*`, `noice`, …), none of which exist
 -- here any more, while knowing nothing about the current ones. The result was spelling underlining
@@ -68,9 +68,20 @@ local function detect_kbrd_cmd()
     end
 end
 
+--- One side of the type gate, on two axes: `ft` (filetype) and `bt` ('buftype'). A bare string or a
+--- plain array is shorthand for `ft`, so `{ "tex" }` and `{ ft = { "tex" } }` are the same list.
+---@alias LvimLinguisticsTypeList string[]|string|{ ft: string[]|string, bt: string[]|string }
+
+--- Type gating. Either list takes `"*"` (as an entry or as the bare string) meaning EVERY type, and
+--- the more specific claim wins: a named type overrides the other list's `"*"`, so both directions
+--- are expressible —
+---   `black_list = { "*" }, white_list = { "tex" }`  — nothing, except TeX;
+---   `white_list = { "*" }, black_list = { "tex" }`  — everything, except TeX.
+--- An empty `white_list` means the same as `{ "*" }`. When both claim a type equally, the black list
+--- wins. Until a list names `bt`, panels, popups and terminals are excluded structurally.
 ---@class LvimLinguisticsFileTypes
----@field black_list string[]  Filetypes where the feature is NEVER active
----@field white_list string[]  If non-empty, the feature is active ONLY in these filetypes (black_list still excludes)
+---@field black_list LvimLinguisticsTypeList  Types where the feature is NEVER active
+---@field white_list LvimLinguisticsTypeList  Types where it MAY be active; empty = all
 
 ---@class LvimLinguisticsModeLanguage
 ---@field active                boolean                  Whether insert-mode layout switching is on
