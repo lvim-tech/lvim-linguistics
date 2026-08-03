@@ -44,7 +44,26 @@ local function detect_kbrd_cmd()
     if desktop:find("hyprland") or session:find("hyprland") then
         return "hyprctl switchxkblayout all "
     elseif desktop:find("mango") or session:find("mango") then
-        return "mmsg -d switch_keyboard_layout "
+        -- mango's switch_keyboard_layout ACCEPTS a layout argument and ignores
+        -- it: measured 2026-08, three consecutive requests for "bg" from us
+        -- produced bg, us, bg — a plain toggle, in both the `,bg` and ` bg`
+        -- spellings. Appending the id therefore set the right layout only
+        -- while the requests happened to alternate, which insert/normal mode
+        -- usually do — until the layout is already the wanted one (switched by
+        -- hand with grp:alt_shift_toggle), where the toggle moved AWAY from it.
+        --
+        -- So the id is not appended; the layout is read back and the toggle
+        -- repeated until the compositor reports what was asked for. Bounded to
+        -- four laps so an id mango does not have cannot spin forever, and the
+        -- en/us pair counts as one layout under both spellings.
+        return function(lang)
+            return ([[want=%s; i=0; while [ $i -lt 4 ]; do ]]
+                .. [[cur=$(mmsg -k 2>/dev/null | awk '/kb_layout/{print $3; exit}'); ]]
+                .. [[[ "$cur" = "$want" ] && break; ]]
+                .. [[{ [ "$want" = en ] && [ "$cur" = us ]; } && break; ]]
+                .. [[{ [ "$want" = us ] && [ "$cur" = en ]; } && break; ]]
+                .. [[mmsg -d switch_keyboard_layout; sleep 0.06; i=$((i+1)); done]]):format(lang)
+        end
     elseif desktop:find("niri") or session:find("niri") or (os.getenv("NIRI_SOCKET") or "") ~= "" then
         return "niri msg action switch-layout "
     elseif desktop:find("sway") or session:find("sway") then
