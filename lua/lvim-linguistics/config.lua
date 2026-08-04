@@ -57,12 +57,14 @@ local function detect_kbrd_cmd()
         -- four laps so an id mango does not have cannot spin forever, and the
         -- en/us pair counts as one layout under both spellings.
         return function(lang)
-            return ([[want=%s; i=0; while [ $i -lt 4 ]; do ]]
+            return (
+                [[want=%s; i=0; while [ $i -lt 4 ]; do ]]
                 .. [[cur=$(mmsg -k 2>/dev/null | awk '/kb_layout/{print $3; exit}'); ]]
                 .. [[[ "$cur" = "$want" ] && break; ]]
                 .. [[{ [ "$want" = en ] && [ "$cur" = us ]; } && break; ]]
                 .. [[{ [ "$want" = us ] && [ "$cur" = en ]; } && break; ]]
-                .. [[mmsg -d switch_keyboard_layout; sleep 0.06; i=$((i+1)); done]]):format(lang)
+                .. [[mmsg -d switch_keyboard_layout; sleep 0.06; i=$((i+1)); done]]
+            ):format(lang)
         end
     elseif desktop:find("niri") or session:find("niri") or (os.getenv("NIRI_SOCKET") or "") ~= "" then
         return "niri msg action switch-layout "
