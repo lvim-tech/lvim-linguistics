@@ -25,7 +25,7 @@ Keyboard switching depends on your display server. The plugin auto-detects the s
 
 ## Installation
 
-Requires Neovim >= 0.10, [lvim-utils](https://github.com/lvim-tech/lvim-utils) and
+Requires Neovim >= 0.12, [lvim-utils](https://github.com/lvim-tech/lvim-utils) and
 [lvim-ui](https://github.com/lvim-tech/lvim-ui) (the settings panel).
 
 ### lvim-installer (recommended)

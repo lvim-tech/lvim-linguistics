@@ -34,7 +34,7 @@ project-local one overrides it (see |lvim-linguistics-local|).
 ==============================================================================
 2. REQUIREMENTS                             *lvim-linguistics-requirements*
 
-  • Neovim >= 0.10
+  • Neovim >= 0.12
   • lvim-utils (palette + merge + the settings store)
   • lvim-ui (the settings panel)
   • curl (to download spell files / dictionaries)
