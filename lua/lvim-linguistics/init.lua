@@ -132,6 +132,9 @@ end
 --- disk, download its .spl and .sug from the Vim FTP mirror into spell_files_folder (async).
 ---@return nil
 M.spell_file_missing = function()
+    -- Re-clear the group HERE, not only at module load: setup() calls this on every run, and a
+    -- second setup() used to stack a second downloader (two curl jobs per missing spell file).
+    vim.api.nvim_create_augroup("LvimLinguisticsSpellFileMissing", { clear = true })
     vim.api.nvim_create_autocmd("SpellFileMissing", {
         callback = function()
             local lang = vim.fn.expand("<amatch>")
@@ -175,6 +178,7 @@ end
 --- .lvim/linguistics/config.json) and re-apply the active features whenever the global cwd changes.
 ---@return nil
 M.change_directory = function()
+    vim.api.nvim_create_augroup("LvimLinguisticsChangeDirectory", { clear = true })
     vim.api.nvim_create_autocmd("DirChanged", {
         pattern = "global",
         callback = function()
