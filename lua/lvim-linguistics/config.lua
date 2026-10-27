@@ -140,7 +140,15 @@ local M = {
         kbrd_cmd = detect_kbrd_cmd(),
         -- No trailing slash: every consumer concatenates `folder .. "/" .. name`, so a trailing slash
         -- here produced a double slash (".../spell//en.utf-8.spl") in every path and notify.
-        spell_files_folder = os.getenv("HOME") .. "/.config/nvim/spell",
+        --
+        -- `stdpath("config")`, not $HOME/.config/nvim: that is where Neovim itself looks for a
+        -- `spell/` directory, and it follows $XDG_CONFIG_HOME and $NVIM_APPNAME. Hardcoding the
+        -- home path wrote the downloaded dictionary and the user's added-words file OUTSIDE the
+        -- config that is actually running whenever either is set -- so the .spl was never on the
+        -- runtimepath and the words went to a directory nobody reads. (It also meant a missing
+        -- $HOME was a concatenation error while this module loaded.) For a default setup the two
+        -- are the same path, so nothing moves.
+        spell_files_folder = vim.fn.stdpath("config") .. "/spell",
     },
     -- The PROJECT-LOCAL settings panel (lvim-ui), opened by `command` — which also carries the quick
     -- toggles as subcommands. It writes `.lvim/linguistics/config.json`, a partial `base_config`
